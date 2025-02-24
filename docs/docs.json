@@ -37,6 +37,10 @@
           "source": "api-reference/openapi.json",
           "directory": "api-reference"
         }
+      },
+      {
+        "tab": "CrewAI",
+        "href": "https://docs.crewai.com/examples/example"
       }
     ],
     "global": {
