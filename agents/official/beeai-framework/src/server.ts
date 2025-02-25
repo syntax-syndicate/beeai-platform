@@ -1,8 +1,8 @@
 #!/usr/bin/env npx -y tsx@latest
 
 import { AcpServer } from "@i-am-bee/acp-sdk/server/acp.js";
-
 import { BeeAgent } from "beeai-framework/agents/bee/agent";
+import { OllamaChatModel } from "beeai-framework/adapters/ollama/backend/chat";
 import { UnconstrainedMemory } from "beeai-framework/memory/unconstrainedMemory";
 import { Version } from "beeai-framework";
 import { runAgentProvider } from "@i-am-bee/beeai-sdk/providers/agent";
@@ -23,6 +23,7 @@ import { agent as contentJudge } from "./content-judge.js";
 import { agent as podcastCreator } from "./podcast-creator.js";
 import { ChatModel } from "beeai-framework/backend/core";
 import { CHAT_MODEL } from "./config.js";
+import { supervisorAgent } from "./supervisor.js";
 
 // Definitions
 
@@ -92,7 +93,17 @@ async function registerTools(server: AcpServer) {
 }
 
 async function registerAgents(server: AcpServer) {
-  const agent = await createBeeAgent();
+  const agent = createBeeAgent();
+
+  server.agent(
+    supervisorAgent.name,
+    supervisorAgent.description,
+    supervisorAgent.inputSchema,
+    supervisorAgent.outputSchema,
+    supervisorAgent.run,
+    supervisorAgent.metadata
+  );
+
   server.agent(
     "chat",
     agent.meta.description,
