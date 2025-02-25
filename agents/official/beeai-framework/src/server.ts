@@ -2,7 +2,6 @@
 
 import { AcpServer } from "@i-am-bee/acp-sdk/server/acp.js";
 import { BeeAgent } from "beeai-framework/agents/bee/agent";
-import { OllamaChatModel } from "beeai-framework/adapters/ollama/backend/chat";
 import { UnconstrainedMemory } from "beeai-framework/memory/unconstrainedMemory";
 import { Version } from "beeai-framework";
 import { runAgentProvider } from "@i-am-bee/beeai-sdk/providers/agent";
