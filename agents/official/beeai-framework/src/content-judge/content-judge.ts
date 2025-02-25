@@ -1,21 +1,21 @@
-import { z } from "zod";
-import { ChatModel } from "beeai-framework/backend/chat";
-import { SystemMessage, UserMessage } from "beeai-framework/backend/message";
-import { Metadata } from "@i-am-bee/beeai-sdk/schemas/metadata";
+import {z} from "zod";
+import {ChatModel} from "beeai-framework/backend/chat";
+import {SystemMessage, UserMessage} from "beeai-framework/backend/message";
+import {Metadata} from "@i-am-bee/beeai-sdk/schemas/metadata";
 import {
-  promptInputSchema,
-  promptOutputSchema,
-} from "@i-am-bee/beeai-sdk/schemas/prompt";
-import { Client as ACPClient } from "@i-am-bee/acp-sdk/client/index.js";
-import { SSEClientTransport } from "@i-am-bee/acp-sdk/client/sse.js";
-import { CHAT_MODEL } from "../config.js";
+  textInputSchema,
+  textOutputSchema,
+} from "@i-am-bee/beeai-sdk/schemas/base";
+import {Client as ACPClient} from "@i-am-bee/acp-sdk/client/index.js";
+import {SSEClientTransport} from "@i-am-bee/acp-sdk/client/sse.js";
+import {CHAT_MODEL} from "../config.js";
 
-const inputSchema = promptInputSchema.extend({
+const inputSchema = textInputSchema.extend({
   documents: z.array(z.string()).default([]).optional(),
   agents: z.array(z.string()).default([]).optional(),
 });
-type Input = z.infer<typeof inputSchema>;
-const outputSchema = promptOutputSchema;
+type Input = z.input<typeof inputSchema>;
+const outputSchema = textOutputSchema;
 
 const criteria = [
   "correctness",
@@ -54,11 +54,11 @@ const calculateScore = (result: Weights) =>
   );
 
 const retrieveDocuments = async ({
-  prompt,
-  agents,
-  signal,
-}: {
-  prompt: string;
+                                   text,
+                                   agents,
+                                   signal,
+                                 }: {
+  text: string;
   agents: string[];
   signal?: AbortSignal;
 }) => {
@@ -79,7 +79,7 @@ const retrieveDocuments = async ({
   }
 
   try {
-    const { agents: platformAgents } = await client.listAgents(undefined, {
+    const {agents: platformAgents} = await client.listAgents(undefined, {
       signal,
     });
     const platformAgentsName = platformAgents.map((agent) => agent.name);
@@ -93,7 +93,7 @@ const retrieveDocuments = async ({
         client.runAgent(
           {
             name: agent,
-            input: { prompt },
+            input: {text},
           },
           {
             timeout: 10 * 60 * 1000,
@@ -117,17 +117,17 @@ const run = async (
   }: {
     params: { input: Input };
   },
-  { signal }: { signal?: AbortSignal }
+  {signal}: { signal?: AbortSignal }
 ) => {
-  const { prompt, documents, agents } = params.input;
+  const {text, documents, agents} = params.input;
   if (!documents?.length && !agents?.length)
-    return { text: "No documents or agents provided." };
+    return {text: "No documents or agents provided.", logs: [], type: "text" as const};
 
   let finalDocuments = documents || [];
   if (agents?.length) {
     finalDocuments = [
       ...finalDocuments,
-      ...(await retrieveDocuments({ prompt, agents, signal })),
+      ...(await retrieveDocuments({text, agents, signal})),
     ];
   }
 
@@ -158,11 +158,13 @@ const run = async (
 
   return {
     text: finalDocuments[highestValueIndex],
+    logs: [],
+    type: "text" as const
   };
 };
 
 const exampleInput1: Input = {
-  prompt:
+  text:
     "Generate a concise summary of the history of artificial intelligence.",
   agents: ["gpt-researcher", "ollama-deep-researcher"],
 };
@@ -172,7 +174,7 @@ const exampleOutput1 = `{
 }`;
 
 const exampleInput2: Input = {
-  prompt: "How does quantum computing impact cryptography?",
+  text: "How does quantum computing impact cryptography?",
   documents: [
     "Quantum computing poses a significant threat to classical encryption methods due to its ability to solve complex mathematical problems exponentially faster...",
     "Current cryptographic standards, such as RSA, rely on integer factorization, which quantum algorithms like Shor’s algorithm can efficiently break...",

@@ -1,26 +1,27 @@
-import { z } from "zod";
-import { Metadata } from "@i-am-bee/beeai-sdk/schemas/metadata";
+import {z} from "zod";
+import {Metadata} from "@i-am-bee/beeai-sdk/schemas/metadata";
 import {
-  promptInputSchema,
-  promptOutputSchema,
-} from "@i-am-bee/beeai-sdk/schemas/prompt";
-import { SystemMessage, UserMessage } from "beeai-framework/backend/message";
-import { CHAT_MODEL } from "../config.js";
-import { ChatModel } from "beeai-framework/backend/chat";
+  textInputSchema,
+  textOutputSchema,
+  TextInput,
+} from "@i-am-bee/beeai-sdk/schemas/base";
+import {SystemMessage, UserMessage} from "beeai-framework/backend/message";
+import {CHAT_MODEL} from "../config.js";
+import {ChatModel} from "beeai-framework/backend/chat";
 
-const inputSchema = promptInputSchema;
-type Input = z.infer<typeof inputSchema>;
-const outputSchema = promptOutputSchema;
+const inputSchema = textInputSchema;
+type Input = TextInput
+const outputSchema = textOutputSchema;
 
 const run = async (
   {
     params,
   }: {
-    params: { input: z.infer<typeof inputSchema> };
+    params: { input: z.input<typeof inputSchema> };
   },
-  { signal }: { signal?: AbortSignal }
+  {signal}: { signal?: AbortSignal }
 ) => {
-  const { prompt } = params.input;
+  const {text} = params.input;
 
   const model = await ChatModel.fromName(CHAT_MODEL);
 
@@ -50,7 +51,7 @@ ALWAYS START YOUR RESPONSE DIRECTLY WITH SPEAKER 1:
 DO NOT GIVE EPISODE TITLES SEPARATELY, LET SPEAKER 1 TITLE IT IN HER SPEECH
 DO NOT GIVE CHAPTER TITLES
 IT SHOULD STRICTLY BE THE DIALOGUES`),
-      new UserMessage(prompt),
+      new UserMessage(text),
     ],
     maxTokens: 8126,
     temperature: 1,
@@ -120,11 +121,13 @@ Example of response:
 
   return {
     text: JSON.stringify(finalReponse.object),
+    logs: [],
+    type: "text" as const
   };
 };
 
 const exampleInput: Input = {
-  prompt:
+  text:
     "Artificial intelligence is revolutionizing industries by automating complex tasks, improving efficiency, and enabling data-driven decision-making. In healthcare, AI is helping doctors diagnose diseases earlier and personalize treatments...",
 };
 

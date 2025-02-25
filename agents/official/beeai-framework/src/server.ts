@@ -1,28 +1,30 @@
 #!/usr/bin/env npx -y tsx@latest
 
-import { AcpServer } from "@i-am-bee/acp-sdk/server/acp.js";
+import {AcpServer} from "@i-am-bee/acp-sdk/server/acp.js";
 
-import { BeeAgent } from "beeai-framework/agents/bee/agent";
-import { UnconstrainedMemory } from "beeai-framework/memory/unconstrainedMemory";
-import { Version } from "beeai-framework";
-import { runAgentProvider } from "@i-am-bee/beeai-sdk/providers/agent";
-import { promptInputSchema } from "@i-am-bee/beeai-sdk/schemas/prompt";
+import {BeeAgent} from "beeai-framework/agents/bee/agent";
+import {UnconstrainedMemory} from "beeai-framework/memory/unconstrainedMemory";
+import {Version} from "beeai-framework";
+import {runAgentProvider} from "@i-am-bee/beeai-sdk/providers/agent";
+import {Log, logSchema, textInputSchema} from "@i-am-bee/beeai-sdk/schemas/base";
 import {
-  messageInputSchema,
-  messageOutputSchema,
+  baseMessageInputSchema,
+  baseMessageOutputSchema,
+  refineMessageInputSchema,
+  refineMessageOutputSchema,
   MessageOutput,
 } from "@i-am-bee/beeai-sdk/schemas/message";
-import { Metadata } from "@i-am-bee/beeai-sdk/schemas/metadata";
-import { WikipediaTool } from "beeai-framework/tools/search/wikipedia";
-import { OpenMeteoTool } from "beeai-framework/tools/weather/openMeteo";
-import { DuckDuckGoSearchTool } from "beeai-framework/tools/search/duckDuckGoSearch";
-import { Message } from "beeai-framework/backend/message";
-import { BaseMemory } from "beeai-framework/memory/base";
-import { z, ZodRawShape } from "zod";
-import { agent as contentJudge } from "./content-judge/content-judge.js";
-import { agent as podcastCreator } from "./podcast-creator/podcast-creator.js";
-import { ChatModel } from "beeai-framework/backend/core";
-import { CHAT_MODEL } from "./config.js";
+import {Metadata} from "@i-am-bee/beeai-sdk/schemas/metadata";
+import {WikipediaTool} from "beeai-framework/tools/search/wikipedia";
+import {OpenMeteoTool} from "beeai-framework/tools/weather/openMeteo";
+import {DuckDuckGoSearchTool} from "beeai-framework/tools/search/duckDuckGoSearch";
+import {Message} from "beeai-framework/backend/message";
+import {BaseMemory} from "beeai-framework/memory/base";
+import {z, ZodRawShape} from "zod";
+import {agent as contentJudge} from "./content-judge/content-judge.js";
+import {agent as podcastCreator} from "./podcast-creator/podcast-creator.js";
+import {ChatModel} from "beeai-framework/backend/core";
+import {CHAT_MODEL} from "./config.js";
 
 // Definitions
 
@@ -34,7 +36,7 @@ const SupportedTool = {
 export type SupportedTools = (typeof SupportedTool)[keyof typeof SupportedTool];
 
 const agentConfigSchema = z
-  .object({ tools: z.array(z.nativeEnum(SupportedTool)).optional() })
+  .object({tools: z.array(z.nativeEnum(SupportedTool)).optional()})
   .passthrough()
   .optional();
 
@@ -68,9 +70,9 @@ async function registerTools(server: AcpServer) {
       toolName,
       tool.description,
       (await tool.inputSchema().shape) as ZodRawShape,
-      async (args, { signal }) => {
-        const result = await createTool(toolName).run(args as any, { signal });
-        return { content: [{ type: "text", text: result.toString() }] };
+      async (args, {signal}) => {
+        const result = await createTool(toolName).run(args as any, {signal});
+        return {content: [{type: "text", text: result.toString()}]};
       }
     );
   }
@@ -80,55 +82,57 @@ async function registerTools(server: AcpServer) {
   server.tool(
     "chat",
     agent.meta.description,
-    promptInputSchema.extend({ config: agentConfigSchema }).shape,
-    async ({ config, ...input }, { signal }) => {
+    textInputSchema.extend({config: agentConfigSchema}).shape,
+    async ({config, ...input}, {signal}) => {
       const agent = await createBeeAgent(undefined, config?.tools);
-      const output = await agent.run(input, {
+      const output = await agent.run({prompt: input.text}, {
         signal,
       });
-      return { content: [{ type: "text", text: output.result.text }] };
+      return {content: [{type: "text", text: output.result.text}]};
     }
   );
 }
 
 async function registerAgents(server: AcpServer) {
   const agent = await createBeeAgent();
+  const chatInputSchema = baseMessageInputSchema.extend({config: agentConfigSchema})
   server.agent(
     "chat",
     agent.meta.description,
-    messageInputSchema.extend({ config: agentConfigSchema }),
-    messageOutputSchema,
+    chatInputSchema,
+    baseMessageOutputSchema,
     async (
       {
         params: {
-          input: { messages, config },
+          input,
           _meta,
         },
       },
-      { signal }
+      {signal}
     ) => {
       const memory = new UnconstrainedMemory();
+      const {messages, config} = refineMessageInputSchema(chatInputSchema).parse(input)
       await memory.addMany(
-        messages.map(({ role, content }) => Message.of({ role, text: content }))
+        messages.map(({role, content}) => Message.of({role, text: content}))
       );
       const agent = await createBeeAgent(memory, config?.tools);
       const output = await agent
-        .run({ prompt: null }, { signal })
+        .run({prompt: null}, {signal})
         .observe((emitter) => {
-          emitter.on("partialUpdate", async ({ update }) => {
+          emitter.on("partialUpdate", async ({update}) => {
             if (_meta?.progressToken && update.key === "final_answer") {
               await server.server.sendAgentRunProgress({
                 progressToken: _meta.progressToken,
                 delta: {
-                  messages: [{ role: "assistant", content: update.value }],
+                  messages: [{role: "assistant", content: update.value}],
                 } as MessageOutput,
               });
             }
           });
         });
-      return {
-        messages: [{ role: "assistant", content: output.result.text }],
-      } as MessageOutput;
+      return refineMessageOutputSchema(baseMessageOutputSchema).parse({
+        messages: [{role: "assistant", content: output.result.text}],
+      })
     },
     {
       framework: "BeeAI",

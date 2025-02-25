@@ -14,20 +14,57 @@
  * limitations under the License.
  */
 
-import { z } from "zod";
-import { inputSchema, outputSchema } from "./base.js";
+import {z} from "zod";
+import {textInputSchema, textOutputSchema} from "./base.js";
 
 export const messageSchema = z.union([
-  z.object({ role: z.literal("user"), content: z.string() }),
-  z.object({ role: z.literal("assistant"), content: z.string() }),
+  z.object({role: z.literal("user"), content: z.string()}),
+  z.object({role: z.literal("assistant"), content: z.string()}),
 ]);
 
-export const messageInputSchema = inputSchema.extend({
-  messages: z.array(messageSchema),
-});
-export type MessageInput = z.input<typeof messageInputSchema>;
+export type Message = z.input<typeof messageSchema>
 
-export const messageOutputSchema = outputSchema.extend({
+export const baseMessageInputSchema = textInputSchema.extend({
+  messages: z.array(messageSchema).default([]),
+  text: z.string().optional()
+})
+
+export type MessageInput = z.input<typeof baseMessageInputSchema>;
+
+export function refineMessageInputSchema<S extends typeof baseMessageInputSchema>(schema: S) {
+  return schema.refine(data => {
+    const hasMessages = (data.messages?.length || 0) > 0;
+    const hasText = !!data.text;
+    return (hasMessages && !hasText) || (!hasMessages && hasText);
+  }, {
+    message: "Must specify exactly one of messages and text"
+  })
+    .transform(data => {
+      data.messages = data.messages ?? []
+      if (data.messages.length === 0) {
+        return {
+          ...data,
+          messages: [messageSchema.parse({content: data.text, role: "user"})]
+        };
+      }
+      return data
+    });
+}
+
+
+export const baseMessageOutputSchema = textOutputSchema.merge(z.object({
   messages: z.array(messageSchema),
-});
-export type MessageOutput = z.output<typeof messageOutputSchema>;
+  text: z.string().transform(() => "")
+}))
+
+export type MessageOutput = z.output<typeof baseMessageOutputSchema>;
+
+
+export function refineMessageOutputSchema<S extends typeof baseMessageOutputSchema>(schema: S) {
+  return schema.transform(data => ({
+      ...data,
+      logs: data.logs ?? [],
+      text: JSON.stringify(data.messages.map(m => ({role: m.role, content: m.content})))
+    }
+  ))
+}
