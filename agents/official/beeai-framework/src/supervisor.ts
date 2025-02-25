@@ -109,7 +109,7 @@ export const agent = async ({
       "gpt-4o-mini",
       {},
       {
-        apiKey: process.env.OPENAI_KEY,
+        apiKey: process.env.OPENAI_API_KEY,
       }
     ),
     memory: new TokenMemory(),

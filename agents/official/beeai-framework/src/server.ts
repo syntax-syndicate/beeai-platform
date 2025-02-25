@@ -92,7 +92,7 @@ async function registerTools(server: AcpServer) {
 }
 
 async function registerAgents(server: AcpServer) {
-  const agent = createBeeAgent();
+  const agent = await createBeeAgent();
 
   server.agent(
     supervisorAgent.name,
