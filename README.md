@@ -34,7 +34,6 @@ BeeAI is an open platform designed to help you discover, run, and compose AI age
 - 🔍 **Discoverability**: Powerful agent catalog with integrated search.
 - 🐝 **BeeAI Ecosystem:** First-class support for [Python](https://github.com/i-am-bee/beeai-framework/tree/main/python) and [TypeScript](https://github.com/i-am-bee/beeai-framework/tree/main/typecript) agent developers via [BeeAI Framework](https://github.com/i-am-bee/beeai-framework).
 
-
 ## Installation
 
 To quickly install and start BeeAI using [Homebrew](https://brew.sh/), run:
@@ -45,6 +44,24 @@ brew services start beeai
 ```
 
 For all installation options, check the [installation guide](https://docs.beeai.dev/get-started/installation).
+
+## LLM Configuration
+
+Many of the available agents rely on an LLM inference provider.
+
+We recommend using [Groq](https://groq.com/), where you can generate an API key upon signing up. You [can create one](https://console.groq.com/keys) and configure the inference provider globally by setting the following configuration in either the CLI or the web interface:
+
+#### CLI
+
+```sh
+beeai env add LLM_MODEL=deepseek-r1-distill-llama-70b
+beeai env add LLM_API_BASE=https://api.groq.com/openai/v1
+beeai env add LLM_API_KEY=your_groq_api_key
+```
+
+#### Web Interface
+
+Head over to the settings at [http://localhost:8333/settings](http://localhost:8333/settings) and provide the variables there.
 
 ## How To Use
 
