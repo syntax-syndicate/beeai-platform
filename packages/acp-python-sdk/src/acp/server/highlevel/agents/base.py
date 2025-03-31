@@ -1,4 +1,4 @@
-from typing import Awaitable, Callable, Type
+from typing import Any, Awaitable, Callable, Type
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -16,5 +16,7 @@ class Agent(BaseModel):
 
     run_fn: Callable[[BaseModel, "Context"], Awaitable[BaseModel]] = Field(exclude=True)
     destroy_fn: Callable[["Context"], Awaitable[None]] | None = Field(exclude=True)
+
+    metadata: dict[str, Any] | None = Field(description="Agent's metadata")
 
     model_config = ConfigDict(extra="allow")

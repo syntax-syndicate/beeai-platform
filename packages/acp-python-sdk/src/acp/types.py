@@ -771,6 +771,8 @@ class Agent(BaseModel):
     inputSchema: dict[str, Any]
     """A JSON Schema object defining the expected agent run output."""
     outputSchema: dict[str, Any]
+    """A metadata from the agent manifest."""
+    metadata: dict[str, Any] | None = None
 
     model_config = ConfigDict(extra="allow")
 

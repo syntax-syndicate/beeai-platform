@@ -570,6 +570,7 @@ class Server:
                     description=agent.description,
                     inputSchema=agent.input.model_json_schema(),
                     outputSchema=agent.output.model_json_schema(),
+                    metadata=agent.metadata,
                     **(agent.model_extra if agent.model_extra else {}),
                 )
                 for agent in agents
