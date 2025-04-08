@@ -12,4 +12,4 @@ providers:
   - location: ghcr.io/i-am-bee/beeai/community/gpt-researcher:agents-v0.0.72
   - location: ghcr.io/i-am-bee/beeai/community/literature-review:agents-v0.0.72
   - location: ghcr.io/i-am-bee/beeai/community/marketing-strategy:agents-v0.0.72
-  - location: ghcr.io/i-am-bee/beeai/community/ollama-deep-researcher:agents-v0.0.72
+  - location: ghcr.io/i-am-bee/beeai/community/ollama-deep-researcher:agents-v0.0.73
