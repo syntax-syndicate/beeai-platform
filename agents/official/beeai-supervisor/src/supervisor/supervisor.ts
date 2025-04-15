@@ -104,7 +104,7 @@ const run =
     };
   };
 
-const agentName = "supervisor";
+const agentName = "beeai-supervisor";
 
 export const agent = {
   name: agentName,
