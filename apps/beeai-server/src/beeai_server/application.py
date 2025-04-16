@@ -21,7 +21,7 @@ from typing import Iterable
 
 from beeai_server.adapters.interface import IProviderRepository
 from beeai_server.crons.sync_registry_providers import preinstall_background_tasks
-from beeai_server.domain.model import LoadedProviderStatus
+from beeai_server.domain.model import LoadedProviderStatus, UnmanagedProvider
 from beeai_server.utils.fastapi import NoCacheStaticFiles
 from fastapi import FastAPI, APIRouter
 from fastapi import HTTPException
@@ -44,6 +44,7 @@ from beeai_server.routes.env import router as env_router
 from beeai_server.routes.telemetry import router as telemetry_router
 from beeai_server.services.mcp_proxy.provider import ProviderContainer
 from beeai_server.utils.periodic import CRON_REGISTRY, run_all_crons
+from beeai_server.services.provider import ProviderService
 
 logger = logging.getLogger(__name__)
 
@@ -132,9 +133,43 @@ def register_telemetry(provider_container: ProviderContainer):
 async def lifespan(
     _app: FastAPI,
     provider_container: ProviderContainer,
+    provider_service: ProviderService,
     telemetry_collector_manager: TelemetryCollectorManager,
     provider_repository: IProviderRepository,
 ):
+    from zeroconf import ServiceBrowser, Zeroconf, IPVersion, ServiceStateChange
+    from typing import cast
+    import re
+    import json
+
+    def on_service_state_change(
+        zeroconf: Zeroconf, service_type: str, name: str, state_change: ServiceStateChange
+    ) -> None:
+        if state_change is ServiceStateChange.Added:
+            info = zeroconf.get_service_info(service_type, name)
+            data_strings = {}
+            for key_bytes, value_bytes in info.properties.items():
+                key_string = key_bytes.decode("utf-8")
+                value_string = (
+                    json.loads(value_bytes.decode("utf-8").replace("'", '"'))
+                    if key_string == "ui"
+                    else value_bytes.decode("utf-8")
+                )
+                data_strings[key_string] = (
+                    int(value_string)
+                    if type(value_string) is str and re.fullmatch(r"-?\d+", value_string)
+                    else value_string
+                )
+            addresses = [f"http://{addr}:{cast(int, info.port)}" for addr in info.parsed_scoped_addresses()]
+            if data_strings.get("manifestVersion"):
+                provider = UnmanagedProvider.model_validate(
+                    {"location": addresses[0], "id": name, "manifest": data_strings}
+                )
+                asyncio.run(provider_service.register_unmanaged_provider(provider))
+
+    zeroconf = Zeroconf(ip_version=IPVersion.All)
+    ServiceBrowser(zeroconf, ["_http._tcp.local."], handlers=[on_service_state_change])
+
     register_telemetry()
     async with provider_container, telemetry_collector_manager, run_all_crons():
 

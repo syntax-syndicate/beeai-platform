@@ -42,6 +42,8 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor, SpanExportResult
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from acp.server.highlevel import Server as ACPServer
 import anyio.from_thread
+from zeroconf import ServiceInfo, Zeroconf, IPVersion
+import socket
 
 AGENT_FILE_NAME = "agent.yaml"
 logger = logging.getLogger(__name__)
@@ -299,10 +301,29 @@ class Server:
             try:
                 server_task = asyncio.create_task(self.server.run_sse_async(timeout_graceful_shutdown=0.5))
                 await asyncio.sleep(0.5)
-                callback_task = asyncio.create_task(self.register_agent())
+                # callback_task = asyncio.create_task(self.register_agent())
+                callback_task = asyncio.create_task(self.register_agent_to_bonjure())
                 await asyncio.gather(server_task, callback_task)
             except KeyboardInterrupt:
                 pass
+
+    async def register_agent_to_bonjure(self):
+        service_info = ServiceInfo(
+            "_http._tcp.local.",
+            f"{self._agent.name}._http._tcp.local.",
+            addresses=[socket.inet_aton(self.server.settings.host)],
+            port=self.server.settings.port,
+            properties=self._manifest or {"name": self._agent.name},
+        )
+
+        zeroconf = Zeroconf(ip_version=IPVersion.All)
+        try:
+            logger.info("Agent registered to the beeai server.")
+            zeroconf.register_service(service_info)
+        except Exception:
+            logger.info("Agent unregistered")
+            zeroconf.unregister_service(service_info)
+            zeroconf.close()
 
     async def register_agent(self):
         """If not in PRODUCTION mode, register agent to the beeai platform and provide missing env variables"""

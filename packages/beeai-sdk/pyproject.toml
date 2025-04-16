@@ -10,6 +10,7 @@ dependencies = [
     "opentelemetry-sdk>=1.30.0",
     "pydantic>=2.10.6",
     "pyyaml>=6.0.2",
+    "zeroconf>=0.146.3",
 ]
 
 [tool.uv.sources]
