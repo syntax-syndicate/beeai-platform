@@ -45,35 +45,6 @@
         "group": "Agent Communication Protocol",
         "pages": [
           "/acp/alpha/introduction",
-          "/acp/spec/mission-team",
-          {
-            "group": "Core Concepts",
-            "icon": "codepen",
-            "pages": [
-              "/acp/spec/concepts/overview",
-              "/acp/spec/concepts/discovery",
-              "/acp/spec/concepts/run",
-              "/acp/spec/concepts/stateful",
-              "/acp/spec/concepts/configuration",
-              "/acp/spec/concepts/async",
-              "/acp/spec/concepts/message-body-structure",
-              "/acp/spec/concepts/client-in-the-loop"
-            ]
-          },
-          {
-            "group": "API Reference",
-            "icon": "brackets-curly",
-            "pages": [
-              "/acp/spec/agents-list",
-              "/acp/spec/agents-get",
-              "/acp/spec/run-create",
-              "/acp/spec/run-get",
-              "/acp/spec/run-resume",
-              "/acp/spec/run-cancel"
-            ]
-          },
-          "/acp/spec/sdk",
-
           {
             "group": "Pre-alpha (deprecated)",
             "pages": [

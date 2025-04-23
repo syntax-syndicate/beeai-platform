@@ -4,27 +4,33 @@ description: "Get to know the Agent Communication Protocol"
 icon: "handshake"
 ---
 
+<Note>
+**Looking for the latest on the Agent Communication Protocol (ACP)?**<br /><br />
+The documentation has moved! You can now find the full, up-to-date guide here:<br />
+👉 [ibm.biz/agentcommunicationprotocol](https://ibm.biz/agentcommunicationprotocol)
+</Note>
+
 ## What is ACP?
 
-The **Agent Communication Protocol (ACP)** is a protocol designed to standardize how agents communicate, enabling automation, agent-to-agent collaboration, UI integration, and developer tooling.
+The **Agent Communication Protocol (ACP)** is an **open standard** enabling **seamless communication** between AI agents, regardless of their implementation details. In ACP, an **agent** is a software service that communicates through multimodal messages, primarily driven by natural language inputs and outputs. The protocol remains **agnostic** to how agents function internally, specifying only the **minimum assumptions** necessary for smooth interoperability. ACP defines a **standardized RESTful API** for managing and executing agents, supporting **synchronous**, **asynchronous**, and **streaming** interactions.
 
-Rather than imposing strict specifications immediately, ACP emphasizes practical, useful features first. Standardization occurs once features demonstrate value, ensuring broader adoption and long-term compatibility.
+## Motivation
 
-### Motivation
+Enterprises today run hundreds to thousands of agents that remain isolated in silos, built on disparate technology stacks, and unable to communicate. ACP unlocks agent-to-agent communication by standardizing interfaces, enabling agents from any technology stack to collaborate effectively and securely.
 
-Current agent systems often use diverse communication standards, causing complexity, integration difficulties, and vendor lock-in. ACP addresses these issues uniquely by standardizing interactions tailored specifically for agents that handle natural language inputs and depend on externally hosted models.
+ACP is developed as a Linux Foundation project, alongside [BeeAI](https://docs.beeai.dev), an open platform to discover and run agents from any technology stack. This is because the ACP team believes that the standard should be community-driven and usable through an open implementation, available to all. No vendor lock-in, no adherence to a proprietary ecosystem.
 
-By accommodating these agent-specific needs, ACP simplifies integration and promotes effective collaboration across agent-based ecosystems.
+## Design Philosophy
 
-**Why Standardization Matters**
+- **Simplicity First:** Easy to implement basic functionality.
+- **Progressive Complexity**: Clear pathways to advanced capabilities without initial complexity.
+- **Minimal Assumptions:** No assumed orchestration patterns or architectural requirements.
 
-Standardization allows practical features to become reliable and broadly adopted. ACP starts flexible and solidifies standards based on real-world use. The benefits are:
+## Core values
 
-- **Interoperability**: Seamless interaction across agents and systems.
-- **Simplified Development**: Less overhead, enabling developers to focus on innovation.
-- **Reuse and Efficiency**: Reduced duplication through reuse of proven solutions.
+ACP is designed to deliver on core, differentiating values:
 
-Additionally, ACP introduces specific enhancements tailored uniquely for agent-based systems:
-
-- **Natural Language Flexibility**: Designed explicitly for agents handling fuzzy or ambiguous natural-language inputs, enabling robust and intuitive interactions.
-- **Model Dependency Management**: Simplifies integration and management of externally hosted models, improving resource management.
+- **REST-based Communication**: ACP uses simple, clearly defined [REST endpoints](/spec/agents-list), aligning closely with standard HTTP patterns. Unlike protocols relying on more complex communication methods (such as JSON-RPC), ACP leverages widely-used HTTP conventions to simplify usage and integration into production environments.
+- **No SDK Required (but we made one anyway)**: ACP is simple enough that you don’t need an SDK or specialized libraries. You can easily interact with ACP-compatible agents using standard HTTP tools like `curl`, Postman, or even your browser. Of course, since we’re developers too, we built an [SDK](https://github.com/i-am-bee/acp/tree/main/python) anyway, just to make life even easier.
+- **Async-first, Sync Supported**: ACP is designed primarily for asynchronous communication, ideal for agents handling longer-running tasks. However, synchronous communication is also fully supported by default, simplifying development, rapid testing, and common use cases.
+- **Offline Discovery**: Agents remain discoverable even when inactive, thanks to ACP’s manifest-based discovery. This enables agents to scale to zero while still being available for discovery and activation as needed.
