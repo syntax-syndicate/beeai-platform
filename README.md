@@ -4,7 +4,7 @@
     <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/i-am-bee/beeai/master/docs/logo/beeai_framework_dark.svg">
     <img alt="BeeAI" src="https://raw.githubusercontent.com/i-am-bee/beeai/master/docs/logo/beeai_framework_dark.svg" width="60"><br><br>
   </picture>
-  BeeAI
+  BeeAI Platform
 </h1>
 
 <h4 align="center">Discover, run, and compose AI agents from any framework</h4>
@@ -31,7 +31,7 @@ https://github.com/user-attachments/assets/dc6cc4d7-4577-44c9-acf7-ec0133268a2d
 
 </div>
 
-BeeAI is an open platform to help you discover, run, and compose AI agents from any framework and language. Whether building your agents or looking for powerful existing solutions, BeeAI makes it easy to find, connect, and orchestrate AI agents seamlessly.
+BeeAI is the first open-source agent-to-agent platform for developers to discover and run agents and create multi-agent workflows. Powered by the open [Agent Communication Protocol (ACP)](https://github.com/i-am-bee/acp), BeeAI makes it easy find, use and connect AI agents from any framework or tech stack.
 
 ## Key features
 
