@@ -39,13 +39,13 @@ server = Server()
             - **Structured Report Generation** – Compiles and formats the search results into a coherent literature review with proper references.
             - **Multi-Source Data Collection** – Leverages both general web searches and academic databases for comprehensive data gathering.
             - **Dynamic Agent Collaboration** – Uses a round-robin approach to coordinate between search and report agents.
-
-            ## Use Cases
-            - **Academic Research** – Supports researchers by automating the initial phase of literature review.
-            - **Report Generation** – Generates structured academic reports for various topics.
-            - **Resource Compilation** – Compiles a list of academic papers and articles relevant to a given topic.
             """
         ),
+        use_cases=[
+            "**Academic Research** – Supports researchers by automating the initial phase of literature review.",
+            "**Report Generation** – Generates structured academic reports for various topics.",
+            "**Resource Compilation** – Compiles a list of academic papers and articles relevant to a given topic."
+        ],
         ui={"type": "hands-off", "user_greeting": "What topic do you want to research?"},
         examples={
             "cli": [
@@ -53,7 +53,6 @@ server = Server()
                     "command": 'beeai run literature-review "quantum"',
                     "name": "Literature Review",
                     "description": "Conducting a Literature Review on AI in Healthcare",
-                    "output": "The current temperature in Paris is 12°C with partly cloudy skies.",
                     "processing_steps": [
                         "Initiates a round-robin task involving Google and Arxiv search agents to gather data",
                         "Collects and processes search results from both sources"
