@@ -45,6 +45,8 @@ jobs:
         with:
           context: ./agents/${{ matrix.agent }}
           push: false
+          build-args: |
+            RELEASE_VERSION:${{ github.ref_name }}
           load: true
           tags: tmp-agent-image
       - name: Read agent manifest
