@@ -20,7 +20,7 @@ jobs:
           - official/beeai-framework/chat
           - official/beeai-framework/agent-docs-creator
           - official/beeai-framework/podcast-creator
-          - official/beeai-framework/sequential-workflow
+          - official/sequential-workflow
           # Community
           - community/aider
           - community/gpt-researcher
