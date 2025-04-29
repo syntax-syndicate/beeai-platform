@@ -15,45 +15,53 @@
  */
 
 import { api } from '#api/index.ts';
+import { ensureData } from '#api/utils.ts';
 
-import type { DeleteProviderBody, InstallProviderBody, RegisterManagedProviderBody } from './types';
+import type { DeleteProviderPath, InstallProviderPath, RegisterManagedProviderRequest } from './types';
 
-export async function registerManagedProvider({ body }: { body: RegisterManagedProviderBody }) {
-  const response = await api.POST('/api/v1/provider/register/managed', { body });
+export async function listProviders() {
+  const response = await api.GET('/api/v1/providers');
 
-  if (response.error != null) {
-    throw new Error('Failed to register managed provider.');
-  }
-
-  return response.data;
+  return ensureData({ response, errorMessage: 'Failed to list providers.' });
 }
 
-export async function installProvider({ body }: { body: InstallProviderBody }) {
-  const response = await api.POST('/api/v1/provider/install', { body });
+export async function deleteProvider({ id }: DeleteProviderPath) {
+  const response = await api.DELETE('/api/v1/providers/{id}', { params: { path: { id } } });
 
-  if (response.error != null) {
-    throw new Error('Failed to install provider.');
-  }
-
-  return response.data;
+  return ensureData({ response, errorMessage: 'Failed to delete provider.' });
 }
 
-export async function deleteProvider({ body }: { body: DeleteProviderBody }) {
-  const response = await api.POST('/api/v1/provider/delete', { body });
+export async function installProvider({ id }: InstallProviderPath) {
+  const response = await api.PUT('/api/v1/providers/{id}/install', { params: { path: { id } } });
 
-  if (response.error != null) {
-    throw new Error('Failed to delete provider.');
-  }
+  // TODO
+  // const response = await api.POST('/api/v1/provider/install', {
+  //   body,
+  //   params: { query: { stream: true } },
+  //   parseAs: 'stream',
+  // });
 
-  return response.data;
+  // const reader = response.response.body?.getReader();
+  // const decoder = new TextDecoder();
+
+  // if (!reader) throw new Error('No reader found');
+
+  // while (true) {
+  //   const { done, value } = await reader.read();
+  //   if (done) break;
+
+  //   const chunk = decoder.decode(value);
+
+  //   console.log({ chunk });
+  // }
+
+  // console.log('done');
+
+  return ensureData({ response, errorMessage: 'Failed to install provider.' });
 }
 
-export async function getProviders() {
-  const response = await api.GET('/api/v1/provider');
+export async function registerManagedProvider({ body }: { body: RegisterManagedProviderRequest }) {
+  const response = await api.POST('/api/v1/providers/register/managed', { body });
 
-  if (response.error != null) {
-    throw new Error('Failed to get providers.');
-  }
-
-  return response.data;
+  return ensureData({ response, errorMessage: 'Failed to register managed provider.' });
 }

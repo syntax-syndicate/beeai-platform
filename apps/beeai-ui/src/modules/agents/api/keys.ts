@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-import type { ListAgentsParams } from './types';
+import type { AgentProvider } from './types';
 
 export const agentKeys = {
   all: () => ['agents'] as const,
   lists: () => [...agentKeys.all(), 'list'] as const,
-  list: ({ params, provider }: { params?: ListAgentsParams; provider?: string } = {}) =>
-    [...agentKeys.lists(), { params, provider }] as const,
+  list: ({ provider }: { provider?: AgentProvider } = {}) => [...agentKeys.lists(), { provider }] as const,
 };

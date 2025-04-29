@@ -16,26 +16,19 @@
 
 import { useQuery } from '@tanstack/react-query';
 
-import { useMCPClient } from '#contexts/MCPClient/index.ts';
-
+import { listAgents } from '..';
 import { agentKeys } from '../keys';
-import type { Agent } from '../types';
+import type { Agent, ReadAgentPath } from '../types';
 
-interface Props {
-  name: string;
-}
-
-export function useAgent({ name }: Props) {
-  const client = useMCPClient();
-
+export function useAgent({ name }: ReadAgentPath) {
   return useQuery({
     queryKey: agentKeys.list(),
-    queryFn: () => client!.listAgents(),
-    enabled: Boolean(client),
+    // TODO: We could use the `/api/v1/acp/agents/{name}` endpoint to fetch the exact agent, but currently we are listing all the agents at once, so we can reuse the data here untill the agents have sorting and pagination.
+    queryFn: listAgents,
     select: (data) => {
       const agent = data.agents.find((item) => name === item.name);
 
-      return agent ? (agent as Agent) : undefined;
+      return agent as Agent;
     },
   });
 }

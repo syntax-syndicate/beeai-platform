@@ -14,30 +14,24 @@
  * limitations under the License.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 
-function getOnlineState() {
-  const isOnline = window.navigator.onLine;
+function subscribe(callback: (event: Event) => void) {
+  window.addEventListener('online', callback);
+  window.addEventListener('offline', callback);
 
-  return isOnline;
+  return () => {
+    window.removeEventListener('online', callback);
+    window.removeEventListener('offline', callback);
+  };
 }
 
 export function useIsOnline() {
-  const [state, setState] = useState(getOnlineState);
-
-  const handleStateChange = useCallback(() => {
-    setState(getOnlineState);
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener('online', handleStateChange);
-    window.addEventListener('offline', handleStateChange);
-
-    return () => {
-      window.removeEventListener('online', handleStateChange);
-      window.removeEventListener('offline', handleStateChange);
-    };
-  }, [handleStateChange]);
+  const state = useSyncExternalStore(
+    subscribe,
+    () => window.navigator.onLine,
+    () => true,
+  );
 
   return state;
 }

@@ -16,18 +16,21 @@
 
 import { useQuery } from '@tanstack/react-query';
 
-import { getProviders } from '..';
+import type { AgentProvider } from '#modules/agents/api/types.ts';
+
+import { listProviders } from '..';
 import { providerKeys } from '../keys';
 
 interface Props {
-  id?: string;
+  id: AgentProvider;
 }
 
 export function useProvider({ id }: Props) {
   const query = useQuery({
     queryKey: providerKeys.list(),
-    queryFn: () => getProviders(),
-    select: (data) => data?.items.find((item) => id === item.id),
+    // TODO: We could use the `/api/v1/providers/{id}` endpoint to fetch the exact provider, but currently we are listing all the providers at once, so we can reuse the data here untill the providers have sorting and pagination.
+    queryFn: listProviders,
+    select: (data) => data.items.find((item) => id === item.id),
     enabled: Boolean(id),
   });
 

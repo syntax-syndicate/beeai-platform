@@ -14,17 +14,22 @@
  * limitations under the License.
  */
 
-import type { ApiRequestBody, ApiResponse } from '#@types/utils.ts';
+import type { ApiPath, ApiRequest, ApiResponse } from '#@types/utils.ts';
 
-export type ProvidersList = ApiResponse<'/api/v1/provider'>;
+export type ProvidersList = ApiResponse<'/api/v1/providers'>;
 
 export type Provider = ProvidersList['items'][number];
 
-export type RegisterManagedProviderBody = ApiRequestBody<'/api/v1/provider/register/managed'>;
+export type DeleteProviderPath = ApiPath<'/api/v1/providers/{id}', 'delete'>;
 
-export type RegisterManagedProviderResponse = ApiResponse<'/api/v1/provider/register/managed', 'post'>;
+export type InstallProviderPath = ApiPath<'/api/v1/providers/{id}/install', 'put'>;
+
+export type RegisterManagedProviderRequest = ApiRequest<'/api/v1/providers/register/managed'>;
+
+export type RegisterManagedProviderResponse = ApiResponse<'/api/v1/providers/register/managed', 'post'>;
 
 export enum ProviderStatus {
+  NotLoaded = 'not_loaded',
   NotInstalled = 'not_installed',
   InstallError = 'install_error',
   Installing = 'installing',
@@ -35,7 +40,3 @@ export enum ProviderStatus {
 }
 
 export type MissingEnvs = Provider['missing_configuration'];
-
-export type InstallProviderBody = ApiRequestBody<'/api/v1/provider/install'>;
-
-export type DeleteProviderBody = ApiRequestBody<'/api/v1/provider/delete'>;

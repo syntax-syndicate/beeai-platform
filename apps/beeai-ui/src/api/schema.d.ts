@@ -20,7 +20,7 @@
  */
 
 export interface paths {
-  '/api/v1/agent': {
+  '/api/v1/acp/agents': {
     parameters: {
       query?: never;
       header?: never;
@@ -28,7 +28,7 @@ export interface paths {
       cookie?: never;
     };
     /** List Agents */
-    get: operations['list_agents_api_v1_agent_get'];
+    get: operations['list_agents_api_v1_acp_agents_get'];
     put?: never;
     post?: never;
     delete?: never;
@@ -37,15 +37,15 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/v1/agent/{name}': {
+  '/api/v1/acp/agents/{name}': {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    /** Get Agent Detail */
-    get: operations['get_agent_detail_api_v1_agent__name__get'];
+    /** Read Agent */
+    get: operations['read_agent_api_v1_acp_agents__name__get'];
     put?: never;
     post?: never;
     delete?: never;
@@ -54,7 +54,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/v1/agent/{name}/run': {
+  '/api/v1/acp/runs': {
     parameters: {
       query?: never;
       header?: never;
@@ -63,33 +63,33 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Run Agent */
-    post: operations['run_agent_api_v1_agent__name__run_post'];
+    /** Create Run */
+    post: operations['create_run_api_v1_acp_runs_post'];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  '/api/v1/env': {
+  '/api/v1/acp/runs/{run_id}': {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    /** List Env */
-    get: operations['list_env_api_v1_env_get'];
-    /** Update Env */
-    put: operations['update_env_api_v1_env_put'];
-    post?: never;
+    /** Read Run */
+    get: operations['read_run_api_v1_acp_runs__run_id__get'];
+    put?: never;
+    /** Resume Run */
+    post: operations['resume_run_api_v1_acp_runs__run_id__post'];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  '/api/v1/env/sync': {
+  '/api/v1/acp/runs/{run_id}/cancel': {
     parameters: {
       query?: never;
       header?: never;
@@ -97,19 +97,16 @@ export interface paths {
       cookie?: never;
     };
     get?: never;
-    /**
-     * Sync Provider Repository
-     * @description Sync external changes to an env repository.
-     */
-    put: operations['sync_provider_repository_api_v1_env_sync_put'];
-    post?: never;
+    put?: never;
+    /** Cancel Run */
+    post: operations['cancel_run_api_v1_acp_runs__run_id__cancel_post'];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  '/api/v1/provider': {
+  '/api/v1/providers': {
     parameters: {
       query?: never;
       header?: never;
@@ -117,7 +114,7 @@ export interface paths {
       cookie?: never;
     };
     /** List Providers */
-    get: operations['list_providers_api_v1_provider_get'];
+    get: operations['list_providers_api_v1_providers_get'];
     put?: never;
     post?: never;
     delete?: never;
@@ -126,24 +123,25 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/v1/provider/delete': {
+  '/api/v1/providers/{id}': {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    get?: never;
+    /** Get Provider */
+    get: operations['get_provider_api_v1_providers__id__get'];
     put?: never;
+    post?: never;
     /** Delete Provider */
-    post: operations['delete_provider_api_v1_provider_delete_post'];
-    delete?: never;
+    delete: operations['delete_provider_api_v1_providers__id__delete'];
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  '/api/v1/provider/install': {
+  '/api/v1/providers/{id}/install': {
     parameters: {
       query?: never;
       header?: never;
@@ -151,16 +149,16 @@ export interface paths {
       cookie?: never;
     };
     get?: never;
-    put?: never;
     /** Install Provider */
-    post: operations['install_provider_api_v1_provider_install_post'];
+    put: operations['install_provider_api_v1_providers__id__install_put'];
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  '/api/v1/provider/logs': {
+  '/api/v1/providers/{id}/logs': {
     parameters: {
       query?: never;
       header?: never;
@@ -168,7 +166,7 @@ export interface paths {
       cookie?: never;
     };
     /** Stream Logs */
-    get: operations['stream_logs_api_v1_provider_logs_get'];
+    get: operations['stream_logs_api_v1_providers__id__logs_get'];
     put?: never;
     post?: never;
     delete?: never;
@@ -177,7 +175,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/v1/provider/preview': {
+  '/api/v1/providers/preview': {
     parameters: {
       query?: never;
       header?: never;
@@ -187,14 +185,14 @@ export interface paths {
     get?: never;
     put?: never;
     /** Preview Provider */
-    post: operations['preview_provider_api_v1_provider_preview_post'];
+    post: operations['preview_provider_api_v1_providers_preview_post'];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  '/api/v1/provider/register/managed': {
+  '/api/v1/providers/register/managed': {
     parameters: {
       query?: never;
       header?: never;
@@ -204,14 +202,14 @@ export interface paths {
     get?: never;
     put?: never;
     /** Create Managed Provider */
-    post: operations['create_managed_provider_api_v1_provider_register_managed_post'];
+    post: operations['create_managed_provider_api_v1_providers_register_managed_post'];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  '/api/v1/provider/register/unmanaged': {
+  '/api/v1/providers/register/unmanaged': {
     parameters: {
       query?: never;
       header?: never;
@@ -221,7 +219,7 @@ export interface paths {
     get?: never;
     put?: never;
     /** Add Unmanaged Provider */
-    post: operations['add_unmanaged_provider_api_v1_provider_register_unmanaged_post'];
+    post: operations['add_unmanaged_provider_api_v1_providers_register_unmanaged_post'];
     delete?: never;
     options?: never;
     head?: never;
@@ -246,51 +244,100 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/variables': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Variables */
+    get: operations['list_variables_api_v1_variables_get'];
+    /** Update Variables */
+    put: operations['update_variables_api_v1_variables_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
-    /**
-     * Agent
-     * @description Definition for an agent.
-     */
+    /** Agent */
     Agent: {
       /** Description */
       description?: string | null;
-      /** Inputschema */
-      inputSchema: Record<string, never>;
+      /** @default {
+       *       "env": []
+       *     } */
+      metadata: components['schemas']['Metadata'];
       /** Name */
       name: string;
-      /** Outputschema */
-      outputSchema: Record<string, never>;
     } & {
       [key: string]: unknown;
     };
-    /** AgentManifest */
-    AgentManifest: {
-      /**
-       * Env
-       * @description For configuration -- passed to the process
-       */
-      env?: components['schemas']['EnvVar'][];
-      /**
-       * Manifestversion
-       * @default 1
-       * @constant
-       */
-      manifestVersion: 1;
+    /** AgentReadResponse */
+    AgentReadResponse: {
+      /** Description */
+      description?: string | null;
+      /** @default {
+       *       "env": []
+       *     } */
+      metadata: components['schemas']['Metadata'];
       /** Name */
       name: string;
-      /** Ui */
-      ui?: Record<string, never> | null;
     } & {
       [key: string]: unknown;
+    };
+    /** AgentsListResponse */
+    AgentsListResponse: {
+      /** Agents */
+      agents: components['schemas']['Agent'][];
+    };
+    /** AnyModel */
+    AnyModel: {
+      [key: string]: unknown;
+    };
+    /** Author */
+    Author: {
+      /** Email */
+      email?: string | null;
+      /** Name */
+      name: string;
+      /** Url */
+      url?: string | null;
+    };
+    /** Contributor */
+    Contributor: {
+      /** Email */
+      email?: string | null;
+      /** Name */
+      name: string;
+      /** Url */
+      url?: string | null;
     };
     /** CreateManagedProviderRequest */
     CreateManagedProviderRequest: {
       /** Location */
-      location: components['schemas']['GithubProviderLocation'] | components['schemas']['DockerImageProviderLocation'];
+      location:
+        | components['schemas']['GithubProviderLocation']
+        | components['schemas']['DockerImageProviderLocation']
+        | components['schemas']['NetworkProviderLocation'];
     };
+    /** Dependency */
+    Dependency: {
+      /** Name */
+      name: string;
+      type: components['schemas']['DependencyType'];
+    };
+    /**
+     * DependencyType
+     * @enum {string}
+     */
+    DependencyType: 'agent' | 'tool' | 'model';
     /** DockerImageID */
     DockerImageID: string;
     /** DockerImageProviderLocation */
@@ -307,8 +354,26 @@ export interface components {
        */
       required: boolean;
     };
+    /** Error */
+    Error: {
+      code: components['schemas']['ErrorCode'];
+      /** Message */
+      message: string;
+    };
+    /**
+     * ErrorCode
+     * @enum {string}
+     */
+    ErrorCode: 'server_error' | 'invalid_input' | 'not_found';
+    /**
+     * FileSystemRegistryLocation
+     * Format: uri
+     */
+    FileSystemRegistryLocation: string;
     /** GithubProviderLocation */
     GithubProviderLocation: components['schemas']['GithubUrl'];
+    /** GithubRegistryLocation */
+    GithubRegistryLocation: components['schemas']['GithubUrl'];
     /** GithubUrl */
     GithubUrl: string;
     /** HTTPValidationError */
@@ -316,35 +381,127 @@ export interface components {
       /** Detail */
       detail?: components['schemas']['ValidationError'][];
     };
-    /** InstallProviderRequest */
-    InstallProviderRequest: {
-      /** Id */
-      id: string;
+    /** Link */
+    Link: {
+      type: components['schemas']['LinkType'];
+      /**
+       * Url
+       * Format: uri
+       */
+      url: string;
     };
-    /** ListEnvSchema */
-    ListEnvSchema: {
+    /**
+     * LinkType
+     * @enum {string}
+     */
+    LinkType: 'source-code' | 'container-image' | 'homepage' | 'documentation';
+    /** ListVariablesSchema */
+    ListVariablesSchema: {
       /** Env */
       env: {
         [key: string]: string;
       };
     };
+    /** Message */
+    Message: {
+      /** Parts */
+      parts: components['schemas']['MessagePart'][];
+    };
+    /** MessageAwaitRequest */
+    MessageAwaitRequest: {
+      message: components['schemas']['Message'];
+      /**
+       * Type
+       * @default message
+       * @constant
+       */
+      type: 'message';
+    };
+    /** MessageAwaitResume */
+    MessageAwaitResume: {
+      message: components['schemas']['Message'];
+      /**
+       * Type
+       * @default message
+       * @constant
+       */
+      type: 'message';
+    };
+    /** MessagePart */
+    MessagePart: {
+      /** Content */
+      content?: string | null;
+      /**
+       * Content Encoding
+       * @default plain
+       */
+      content_encoding: ('plain' | 'base64') | null;
+      /**
+       * Content Type
+       * @default text/plain
+       */
+      content_type: string | null;
+      /** Content Url */
+      content_url?: string | null;
+      /** Name */
+      name?: string | null;
+    } & {
+      [key: string]: unknown;
+    };
+    /** Metadata */
+    Metadata: {
+      annotations?: components['schemas']['AnyModel'] | null;
+      author?: components['schemas']['Author'] | null;
+      /** Contributors */
+      contributors?: components['schemas']['Contributor'][] | null;
+      /** Created At */
+      created_at?: string | null;
+      /** Dependencies */
+      dependencies?: components['schemas']['Dependency'][] | null;
+      /** Documentation */
+      documentation?: string | null;
+      /**
+       * Env
+       * @description For configuration -- passed to the process
+       */
+      env?: components['schemas']['EnvVar'][];
+      /** Framework */
+      framework?: string | null;
+      /** License */
+      license?: string | null;
+      /** Links */
+      links?: components['schemas']['Link'][] | null;
+      /** Natural Languages */
+      natural_languages?: string[] | null;
+      /** Programming Language */
+      programming_language?: string | null;
+      /** Provider */
+      provider?: string | null;
+      /** Recommended Models */
+      recommended_models?: string[] | null;
+      /** Tags */
+      tags?: string[] | null;
+      /** Ui */
+      ui?: {
+        [key: string]: unknown;
+      } | null;
+      /** Updated At */
+      updated_at?: string | null;
+      /** Use Cases */
+      use_cases?: string[] | null;
+    } & {
+      [key: string]: unknown;
+    };
     /**
-     * LoadedProviderStatus
-     * @enum {string}
+     * NetworkProviderLocation
+     * Format: uri
      */
-    LoadedProviderStatus: 'not_installed' | 'install_error' | 'installing' | 'starting' | 'ready' | 'running' | 'error';
-    /** LoadProviderErrorMessage */
-    LoadProviderErrorMessage: {
-      /** Message */
-      message: string;
-    };
-    /** PaginatedResponse[Agent] */
-    PaginatedResponse_Agent_: {
-      /** Items */
-      items: components['schemas']['Agent'][];
-      /** Total Count */
-      total_count: number;
-    };
+    NetworkProviderLocation: string;
+    /**
+     * NetworkRegistryLocation
+     * Format: uri
+     */
+    NetworkRegistryLocation: string;
     /** PaginatedResponse[ProviderWithStatus] */
     PaginatedResponse_ProviderWithStatus_: {
       /** Items */
@@ -352,42 +509,181 @@ export interface components {
       /** Total Count */
       total_count: number;
     };
-    /** ProviderRequest */
-    ProviderRequest: {
-      /** Id */
-      id: string;
-      /**
-       * Location
-       * Format: uri
-       */
-      location: string;
-      manifest: components['schemas']['AgentManifest'];
+    /** ProviderErrorMessage */
+    ProviderErrorMessage: {
+      /** Message */
+      message: string;
     };
+    /** ProviderManifest */
+    ProviderManifest: {
+      /** Agents */
+      agents: components['schemas']['Agent'][];
+    } & {
+      [key: string]: unknown;
+    };
+    /**
+     * ProviderStatus
+     * @enum {string}
+     */
+    ProviderStatus:
+      | 'not_loaded'
+      | 'not_installed'
+      | 'install_error'
+      | 'installing'
+      | 'starting'
+      | 'ready'
+      | 'running'
+      | 'error';
     /** ProviderWithStatus */
     ProviderWithStatus: {
       /** Id */
       id: string;
-      last_error?: components['schemas']['LoadProviderErrorMessage'] | null;
-      manifest: components['schemas']['AgentManifest'];
+      last_error?: components['schemas']['ProviderErrorMessage'] | null;
+      /** Location */
+      location: string;
+      manifest: components['schemas']['ProviderManifest'];
       /** Missing Configuration */
       missing_configuration?: components['schemas']['EnvVar'][];
-      status: components['schemas']['LoadedProviderStatus'];
+      /** Registry */
+      registry?:
+        | components['schemas']['GithubRegistryLocation']
+        | components['schemas']['NetworkRegistryLocation']
+        | components['schemas']['FileSystemRegistryLocation']
+        | null;
+      status: components['schemas']['ProviderStatus'];
     } & {
       [key: string]: unknown;
     };
-    /** RootModel[dict[str, Any]] */
-    RootModel_dict_str__Any__: Record<string, never>;
-    /** UpdateEnvRequest */
-    UpdateEnvRequest: {
-      /** Env */
-      env: {
-        [key: string]: string | null;
-      };
+    /** RegisterUnmanagedProviderRequest */
+    RegisterUnmanagedProviderRequest: {
+      /**
+       * Id
+       * @deprecated
+       */
+      id?: string | null;
+      location: components['schemas']['NetworkProviderLocation'];
     };
+    /** RunCancelResponse */
+    RunCancelResponse: {
+      /** Agent Name */
+      agent_name: string;
+      await_request?: components['schemas']['MessageAwaitRequest'] | null;
+      error?: components['schemas']['Error'] | null;
+      /**
+       * Output
+       * @default []
+       */
+      output: components['schemas']['Message'][];
+      /**
+       * Run Id
+       * Format: uuid
+       */
+      run_id?: string;
+      /** Session Id */
+      session_id?: string | null;
+      /** @default created */
+      status: components['schemas']['RunStatus'];
+    };
+    /** RunCreateRequest */
+    RunCreateRequest: {
+      /** Agent Name */
+      agent_name: string;
+      /** Input */
+      input: components['schemas']['Message'][];
+      /** @default sync */
+      mode: components['schemas']['RunMode'];
+      /** Session Id */
+      session_id?: string | null;
+    };
+    /** RunCreateResponse */
+    RunCreateResponse: {
+      /** Agent Name */
+      agent_name: string;
+      await_request?: components['schemas']['MessageAwaitRequest'] | null;
+      error?: components['schemas']['Error'] | null;
+      /**
+       * Output
+       * @default []
+       */
+      output: components['schemas']['Message'][];
+      /**
+       * Run Id
+       * Format: uuid
+       */
+      run_id?: string;
+      /** Session Id */
+      session_id?: string | null;
+      /** @default created */
+      status: components['schemas']['RunStatus'];
+    };
+    /**
+     * RunMode
+     * @enum {string}
+     */
+    RunMode: 'sync' | 'async' | 'stream';
+    /** RunReadResponse */
+    RunReadResponse: {
+      /** Agent Name */
+      agent_name: string;
+      await_request?: components['schemas']['MessageAwaitRequest'] | null;
+      error?: components['schemas']['Error'] | null;
+      /**
+       * Output
+       * @default []
+       */
+      output: components['schemas']['Message'][];
+      /**
+       * Run Id
+       * Format: uuid
+       */
+      run_id?: string;
+      /** Session Id */
+      session_id?: string | null;
+      /** @default created */
+      status: components['schemas']['RunStatus'];
+    };
+    /** RunResumeRequest */
+    RunResumeRequest: {
+      await_resume: components['schemas']['MessageAwaitResume'];
+      mode: components['schemas']['RunMode'];
+    };
+    /** RunResumeResponse */
+    RunResumeResponse: {
+      /** Agent Name */
+      agent_name: string;
+      await_request?: components['schemas']['MessageAwaitRequest'] | null;
+      error?: components['schemas']['Error'] | null;
+      /**
+       * Output
+       * @default []
+       */
+      output: components['schemas']['Message'][];
+      /**
+       * Run Id
+       * Format: uuid
+       */
+      run_id?: string;
+      /** Session Id */
+      session_id?: string | null;
+      /** @default created */
+      status: components['schemas']['RunStatus'];
+    };
+    /**
+     * RunStatus
+     * @enum {string}
+     */
+    RunStatus: 'created' | 'in-progress' | 'awaiting' | 'cancelling' | 'cancelled' | 'completed' | 'failed';
     /** UpdateTelemetryConfigRequest */
     UpdateTelemetryConfigRequest: {
       /** Sharing Enabled */
       sharing_enabled: boolean;
+    };
+    /** UpdateVariablesRequest */
+    UpdateVariablesRequest: {
+      /** Env */
+      env: {
+        [key: string]: string | null;
+      };
     };
     /** ValidationError */
     ValidationError: {
@@ -407,7 +703,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-  list_agents_api_v1_agent_get: {
+  list_agents_api_v1_acp_agents_get: {
     parameters: {
       query?: never;
       header?: never;
@@ -422,12 +718,12 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['PaginatedResponse_Agent_'];
+          'application/json': components['schemas']['AgentsListResponse'];
         };
       };
     };
   };
-  get_agent_detail_api_v1_agent__name__get: {
+  read_agent_api_v1_acp_agents__name__get: {
     parameters: {
       query?: never;
       header?: never;
@@ -444,7 +740,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['Agent'];
+          'application/json': components['schemas']['AgentReadResponse'];
         };
       };
       /** @description Validation Error */
@@ -458,20 +754,49 @@ export interface operations {
       };
     };
   };
-  run_agent_api_v1_agent__name__run_post: {
+  create_run_api_v1_acp_runs_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RunCreateRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RunCreateResponse'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  read_run_api_v1_acp_runs__run_id__get: {
     parameters: {
       query?: never;
       header?: never;
       path: {
-        name: string;
+        run_id: string;
       };
       cookie?: never;
     };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['RootModel_dict_str__Any__'];
-      };
-    };
+    requestBody?: never;
     responses: {
       /** @description Successful Response */
       200: {
@@ -479,7 +804,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': Record<string, never>;
+          'application/json': components['schemas']['RunReadResponse'];
         };
       };
       /** @description Validation Error */
@@ -493,14 +818,20 @@ export interface operations {
       };
     };
   };
-  list_env_api_v1_env_get: {
+  resume_run_api_v1_acp_runs__run_id__post: {
     parameters: {
       query?: never;
       header?: never;
-      path?: never;
+      path: {
+        run_id: string;
+      };
       cookie?: never;
     };
-    requestBody?: never;
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RunResumeRequest'];
+      };
+    };
     responses: {
       /** @description Successful Response */
       200: {
@@ -508,31 +839,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['ListEnvSchema'];
-        };
-      };
-    };
-  };
-  update_env_api_v1_env_put: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['UpdateEnvRequest'];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': unknown;
+          'application/json': components['schemas']['RunResumeResponse'];
         };
       };
       /** @description Validation Error */
@@ -546,11 +853,13 @@ export interface operations {
       };
     };
   };
-  sync_provider_repository_api_v1_env_sync_put: {
+  cancel_run_api_v1_acp_runs__run_id__cancel_post: {
     parameters: {
       query?: never;
       header?: never;
-      path?: never;
+      path: {
+        run_id: string;
+      };
       cookie?: never;
     };
     requestBody?: never;
@@ -561,12 +870,21 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': unknown;
+          'application/json': components['schemas']['RunCancelResponse'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
         };
       };
     };
   };
-  list_providers_api_v1_provider_get: {
+  list_providers_api_v1_providers_get: {
     parameters: {
       query?: never;
       header?: never;
@@ -586,51 +904,16 @@ export interface operations {
       };
     };
   };
-  delete_provider_api_v1_provider_delete_post: {
+  get_provider_api_v1_providers__id__get: {
     parameters: {
       query?: never;
       header?: never;
-      path?: never;
+      path: {
+        id: string;
+      };
       cookie?: never;
     };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['InstallProviderRequest'];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  install_provider_api_v1_provider_install_post: {
-    parameters: {
-      query?: {
-        stream?: boolean;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['InstallProviderRequest'];
-      };
-    };
+    requestBody?: never;
     responses: {
       /** @description Successful Response */
       200: {
@@ -638,7 +921,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': unknown;
+          'application/json': components['schemas']['ProviderWithStatus'];
         };
       };
       /** @description Validation Error */
@@ -652,14 +935,13 @@ export interface operations {
       };
     };
   };
-  stream_logs_api_v1_provider_logs_get: {
+  delete_provider_api_v1_providers__id__delete: {
     parameters: {
-      query: {
-        /** @description Provider ID */
+      query?: never;
+      header?: never;
+      path: {
         id: string;
       };
-      header?: never;
-      path?: never;
       cookie?: never;
     };
     requestBody?: never;
@@ -682,84 +964,18 @@ export interface operations {
       };
     };
   };
-  preview_provider_api_v1_provider_preview_post: {
+  install_provider_api_v1_providers__id__install_put: {
     parameters: {
-      query?: never;
+      query?: {
+        stream?: boolean;
+      };
       header?: never;
-      path?: never;
+      path: {
+        id: string;
+      };
       cookie?: never;
     };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['CreateManagedProviderRequest'];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ProviderWithStatus'];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  create_managed_provider_api_v1_provider_register_managed_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['CreateManagedProviderRequest'];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ProviderWithStatus'];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
-        };
-      };
-    };
-  };
-  add_unmanaged_provider_api_v1_provider_register_unmanaged_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ProviderRequest'];
-      };
-    };
+    requestBody?: never;
     responses: {
       /** @description Successful Response */
       200: {
@@ -768,6 +984,139 @@ export interface operations {
         };
         content: {
           'application/json': unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  stream_logs_api_v1_providers__id__logs_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  preview_provider_api_v1_providers_preview_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateManagedProviderRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProviderWithStatus'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  create_managed_provider_api_v1_providers_register_managed_post: {
+    parameters: {
+      query?: {
+        install?: boolean;
+        stream?: boolean;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateManagedProviderRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProviderWithStatus'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  add_unmanaged_provider_api_v1_providers_register_unmanaged_post: {
+    parameters: {
+      query?: {
+        persist?: boolean;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RegisterUnmanagedProviderRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProviderWithStatus'];
         };
       };
       /** @description Validation Error */
@@ -816,6 +1165,59 @@ export interface operations {
     responses: {
       /** @description Successful Response */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_variables_api_v1_variables_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ListVariablesSchema'];
+        };
+      };
+    };
+  };
+  update_variables_api_v1_variables_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateVariablesRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
         headers: {
           [name: string]: unknown;
         };

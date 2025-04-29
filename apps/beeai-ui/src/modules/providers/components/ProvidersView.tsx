@@ -36,7 +36,7 @@ import { useModal } from '#contexts/Modal/index.tsx';
 import { useTableSearch } from '#hooks/useTableSearch.ts';
 import { useListAgents } from '#modules/agents/api/queries/useListAgents.ts';
 import { ImportAgentsModal } from '#modules/agents/components/ImportAgentsModal.tsx';
-import { getAgentsLanguages } from '#modules/agents/utils.ts';
+import { getAgentsProgrammingLanguages } from '#modules/agents/utils.ts';
 
 import { useDeleteProvider } from '../api/mutations/useDeleteProvider';
 import { useListProviders } from '../api/queries/useListProviders';
@@ -52,14 +52,14 @@ export function ProvidersView() {
   const entries = useMemo(
     () =>
       providers
-        ? providers.items.map(({ id }) => {
+        ? providers.items.map(({ id, location }) => {
             const agents = agentsByProvider[id];
-            const source = getProviderSource(id);
+            const source = getProviderSource(location);
             return {
               id,
-              url: stripProviderSourcePrefix(id),
+              url: stripProviderSourcePrefix(location),
               source,
-              runtime: getAgentsLanguages(agents).join(', '),
+              runtime: getAgentsProgrammingLanguages(agents).join(', '),
               agents: agents?.length ?? 0,
               actions: (
                 <TableViewActions>
@@ -77,7 +77,7 @@ export function ProvidersView() {
                         body: 'Are you sure you want to delete this provider? It can’t be undone.',
                         primaryButtonText: 'Delete',
                         danger: true,
-                        onSubmit: () => deleteProvider({ body: { id } }),
+                        onSubmit: () => deleteProvider({ id }),
                       })
                     }
                     align="left"

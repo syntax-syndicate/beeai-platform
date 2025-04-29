@@ -40,9 +40,13 @@ export function AgentsFilters({ agents }: Props) {
   const id = useId();
   const occurrences = useMemo(() => agents && countOccurrences(agents), [agents]);
   const { watch, setValue } = useFormContext<AgentsFiltersParams>();
-  const [selectedFrameworks, selectedLanguages, selectedLicenses] = watch(['frameworks', 'languages', 'licenses']);
+  const [selectedFrameworks, selectedProgrammingLanguages, selectedLicenses] = watch([
+    'frameworks',
+    'programmingLanguages',
+    'licenses',
+  ]);
   const areArrayFiltersActive = Boolean(
-    selectedFrameworks.length || selectedLanguages.length || selectedLicenses.length,
+    selectedFrameworks.length || selectedProgrammingLanguages.length || selectedLicenses.length,
   );
 
   return (
@@ -69,10 +73,10 @@ export function AgentsFilters({ agents }: Props) {
                   onChange: (value) => setValue('frameworks', value),
                 }),
                 createGroup({
-                  label: 'Language',
-                  occurrence: occurrences.languages,
-                  selected: selectedLanguages,
-                  onChange: (value) => setValue('languages', value),
+                  label: 'Programming languages',
+                  occurrence: occurrences.programming_languages,
+                  selected: selectedProgrammingLanguages,
+                  onChange: (value) => setValue('programmingLanguages', value),
                 }),
                 createGroup({
                   label: 'License',
@@ -83,7 +87,7 @@ export function AgentsFilters({ agents }: Props) {
               ]}
               onClearAll={() => {
                 setValue('frameworks', []);
-                setValue('languages', []);
+                setValue('programmingLanguages', []);
                 setValue('licenses', []);
               }}
               toggleButtonClassName={classes.toggleButton}

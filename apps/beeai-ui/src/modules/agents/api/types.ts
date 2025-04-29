@@ -14,15 +14,35 @@
  * limitations under the License.
  */
 
-import type { Agent as SdkAgent, ListAgentsRequest } from '@i-am-bee/acp-sdk/types';
-import type { Metadata } from '@i-am-bee/beeai-sdk/schemas/metadata';
+import type { ApiPath, ApiResponse } from '#@types/utils.ts';
 
-export type Agent = SdkAgent &
-  Metadata & {
-    // TODO: Temporary due to different structure in Python agents
+export type Agent = ApiResponse<'/api/v1/acp/agents/{name}'> & {
+  metadata: {
+    ui?: {
+      type?: UiType;
+      user_greeting?: string;
+    };
     examples?: {
+      cli?: { command?: string }[];
       command?: string;
     };
   };
+};
 
-export type ListAgentsParams = ListAgentsRequest['params'];
+export type AgentName = Agent['name'];
+
+export type AgentProvider = Agent['metadata']['provider'];
+
+export type ReadAgentPath = ApiPath<'/api/v1/acp/agents/{name}'>;
+
+export enum UiType {
+  Chat = 'chat',
+  HandsOff = 'hands-off',
+}
+
+export enum LinkType {
+  SourceCode = 'source-code',
+  ContainerImage = 'container-image',
+  Homepage = 'homepage',
+  Documentation = 'documentation',
+}
