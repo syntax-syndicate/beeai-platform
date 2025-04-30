@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-export const RELEASE_VERSION = 'v0.1.0';
+export const RELEASE_VERSION = 'v0.1.2';
 
 export const DOCKER_MANIFEST_LABEL_NAME = 'beeai.dev.agent.yaml';
 
