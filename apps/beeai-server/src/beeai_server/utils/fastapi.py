@@ -29,11 +29,15 @@ class NoCacheStaticFiles(StaticFiles):
         return response
 
 
+def encode_stream(chunk: str) -> str:
+    return f"data: {chunk}\n\n"
+
+
 def streaming_response(content: AsyncContentStream):
     async def wrapper(stream):
         try:
             async for chunk in stream:
-                yield f"data: {chunk}\n\n"
+                yield encode_stream(chunk)
         except Exception as ex:
             errors = extract_messages(ex)
             if len(errors) == 1:
@@ -41,9 +45,13 @@ def streaming_response(content: AsyncContentStream):
             else:
                 error = "ExceptionGroup"
                 message = repr(errors)
-            yield ErrorStreamResponse(
-                error=ErrorStreamResponseError(status_code=HTTP_500_INTERNAL_SERVER_ERROR, type=error, detail=message)
-            ).model_dump_json()
+            yield encode_stream(
+                ErrorStreamResponse(
+                    error=ErrorStreamResponseError(
+                        status_code=HTTP_500_INTERNAL_SERVER_ERROR, type=error, detail=message
+                    )
+                ).model_dump_json()
+            )
 
     return StreamingResponse(
         wrapper(content),
