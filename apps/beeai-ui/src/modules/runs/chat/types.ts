@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
+import type { MessagePart, RunError } from '../api/types';
 import type { Role } from '../types';
 
 interface Message {
   key: string;
   role: Role;
   content: string;
-  error?: Error;
+  error?: RunError;
 }
 export interface UserMessage extends Message {
   role: Role.User;
@@ -32,7 +33,7 @@ export interface AssistantMessage extends Message {
 
 export type ChatMessage = UserMessage | AssistantMessage;
 
-export type SendMessageParams = { input: string };
+export type MessageParams = Partial<MessagePart> & { content: string };
 
 export enum MessageStatus {
   InProgress = 'in-progress',

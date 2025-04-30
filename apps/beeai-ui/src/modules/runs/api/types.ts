@@ -42,6 +42,8 @@ export type RunId = CreateRunResponse['run_id'];
 
 export type SessionId = CreateRunResponse['session_id'];
 
+export type RunError = CreateRunResponse['error'];
+
 export enum RunMode {
   Sync = 'sync',
   Async = 'async',
@@ -124,11 +126,13 @@ export interface MessageCompletedEvent {
 export interface GenericEvent {
   type: EventType.Generic;
   generic: {
+    // TODO: We should probably narrow this down for each UI type
     thought?: string;
     tool_name?: string;
     tool_input?: string;
     tool_output?: string;
     message?: string;
+    agent_idx?: number;
   };
 }
 
