@@ -23,14 +23,14 @@ from beeai_server.configuration import Configuration
 from beeai_server.domain.provider.model import ProviderStatus
 from beeai_server.services.provider import ProviderService
 from beeai_server.utils.periodic import periodic
-from kink import inject
+from kink import inject, di
 
 logger = logging.getLogger(__name__)
 
 preinstall_background_tasks: dict[str, Task] = {}
 
 
-@periodic(period=timedelta(minutes=10))
+@periodic(period=timedelta(seconds=di[Configuration].agent_registry.sync_period_sec))
 @inject
 async def check_registry(configuration: Configuration, provider_service: ProviderService):
     if not configuration.agent_registry.enabled:

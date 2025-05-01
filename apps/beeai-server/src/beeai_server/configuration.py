@@ -15,6 +15,7 @@
 import base64
 import logging
 from collections import defaultdict
+from datetime import timedelta
 from functools import cache
 from pathlib import Path
 
@@ -62,6 +63,7 @@ class AgentRegistryConfiguration(BaseModel):
         root=GithubUrl(root="https://github.com/i-am-bee/beeai-platform@release-v0.1.2#path=agent-registry.yaml")
     )
     preinstall: bool = False
+    sync_period_sec: int = Field(default=timedelta(minutes=10).total_seconds())
 
 
 class Configuration(BaseSettings):

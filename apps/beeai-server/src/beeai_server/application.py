@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
-import contextlib
 import logging
 import pathlib
 from contextlib import asynccontextmanager
@@ -29,7 +27,6 @@ from acp_sdk.server.errors import (
 from starlette.requests import Request
 
 from beeai_server.adapters.interface import IProviderRepository
-from beeai_server.crons.sync_registry_providers import preinstall_background_tasks
 from beeai_server.domain.provider.container import ProviderContainer
 from beeai_server.domain.provider.model import ProviderStatus
 from beeai_server.utils.fastapi import NoCacheStaticFiles
@@ -53,7 +50,6 @@ from beeai_server.routes.provider import router as provider_router
 from beeai_server.routes.acp import router as acp_router
 from beeai_server.routes.env import router as env_router
 from beeai_server.routes.telemetry import router as telemetry_router
-from beeai_server.utils.periodic import CRON_REGISTRY, run_all_crons
 
 logger = logging.getLogger(__name__)
 
@@ -161,6 +157,9 @@ async def lifespan(
     telemetry_collector_manager: TelemetryCollectorManager,
     provider_repository: IProviderRepository,
 ):
+    from beeai_server.crons.sync_registry_providers import preinstall_background_tasks
+    from beeai_server.utils.periodic import run_all_crons
+
     register_telemetry()
     for provider in await provider_repository.list():
         await provider_container.add(provider)
@@ -173,15 +172,6 @@ async def lifespan(
             for task in preinstall_background_tasks.values():
                 task.cancel()
             shutdown_telemetry()
-
-
-@contextlib.asynccontextmanager
-async def _run_all_crons():
-    try:
-        await asyncio.gather(*(cron.start() for cron in CRON_REGISTRY.values()))
-        yield
-    finally:
-        await asyncio.gather(*(cron.stop() for cron in CRON_REGISTRY.values()))
 
 
 def app() -> FastAPI:
