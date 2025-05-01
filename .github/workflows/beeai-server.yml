@@ -53,6 +53,7 @@ jobs:
 
   deploy-to-k8s:
     needs: build-and-push
+    if: false
     runs-on: [self-hosted]
     steps:
       - name: Checkout code
