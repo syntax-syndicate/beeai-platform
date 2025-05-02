@@ -47,7 +47,6 @@ def show_version():
 
     print("beeai-cli version:", version("beeai-cli"))
     print("beeai-server version:", version("beeai-server"))
-    print("beeai-sdk version:", version("beeai-sdk"))
     print("acp-sdk version:", version("acp-sdk"))
 
 
