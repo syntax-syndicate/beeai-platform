@@ -131,6 +131,8 @@ export interface GenericEvent {
     tool_output?: string;
     message?: string;
     agent_idx?: number;
+  } & {
+    [key: string]: unknown;
   };
 }
 
