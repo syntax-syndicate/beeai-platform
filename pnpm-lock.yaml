@@ -264,6 +264,9 @@ importers:
       '@carbon/icons-react':
         specifier: '*'
         version: 11.56.0(react@19.0.0)
+      '@carbon/react':
+        specifier: ^1.79.0
+        version: 1.79.0(react-dom@19.0.0(react@19.0.0))(react-is@19.0.0)(react@19.0.0)(sass@1.85.0)
       '@i-am-bee/beeai-ui':
         specifier: workspace:*
         version: link:../beeai-ui
