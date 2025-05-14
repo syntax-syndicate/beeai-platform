@@ -14,6 +14,7 @@
 
 
 import os
+import re
 import sys
 import tempfile
 import typer
@@ -24,7 +25,7 @@ from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
 from InquirerPy.validator import EmptyInputValidator
 
-from beeai_cli.api import api_request, wait_for_agents
+from beeai_cli.api import api_request
 from beeai_cli.async_typer import AsyncTyper, console, err_console, create_table
 from beeai_cli.utils import parse_env_var, format_error
 
@@ -72,42 +73,46 @@ async def setup() -> bool:
         message="Select LLM provider:",
         choices=[
             Choice(
-                name="OpenAI".ljust(20) + "🚀 best performance", value=("OpenAI", "https://api.openai.com/v1", "gpt-4o")
+                name="OpenAI".ljust(25) + "🚀 best performance", value=("OpenAI", "https://api.openai.com/v1", "gpt-4o")
             ),
             Choice(
-                name="DeepSeek".ljust(20) + "🚀 best performance",
+                name="DeepSeek".ljust(25) + "🚀 best performance",
                 value=("DeepSeek", "https://api.deepseek.com/v1", "deepseek-reasoner"),
             ),
             Choice(
-                name="NVIDIA NIM".ljust(20) + "🚀 best performance",
+                name="NVIDIA NIM".ljust(25) + "🚀 best performance",
                 value=("NVIDIA", "https://integrate.api.nvidia.com/v1", "deepseek-ai/deepseek-r1"),
             ),
             Choice(
-                name="OpenRouter".ljust(20) + "🆓 has some free models",
+                name="OpenRouter".ljust(25) + "🆓 has some free models",
                 value=("OpenRouter", "https://openrouter.ai/api/v1", "deepseek/deepseek-r1-distill-llama-70b:free"),
             ),
             Choice(
-                name="Groq".ljust(20) + "🆓 has a free tier",
+                name="Groq".ljust(25) + "🆓 has a free tier",
                 value=("Groq", "https://api.groq.com/openai/v1", "deepseek-r1-distill-llama-70b"),
             ),
             Choice(
-                name="Cohere".ljust(20) + "🆓 has a free tier",
+                name="Cohere".ljust(25) + "🆓 has a free tier",
                 value=("Cohere", "https://api.cohere.ai/compatibility/v1", "command-r-plus"),
             ),
             Choice(
-                name="Mistral".ljust(20) + "🚧 experimental 🆓 has a free tier",
+                name="Mistral".ljust(25) + "🚧 experimental 🆓 has a free tier",
                 value=("Mistral", "https://api.mistral.ai/v1", "mistral-large-latest"),
             ),
             Choice(
-                name="Anthropic Claude".ljust(20) + "🚧 experimental",
+                name="Anthropic Claude".ljust(25) + "🚧 experimental",
                 value=("Anthropic", "https://api.anthropic.com/v1", "claude-3-7-sonnet-latest"),
             ),
             Choice(
-                name="Perplexity".ljust(20) + "🚧 experimental", value=("Perplexity", "https://api.perplexity.ai", None)
+                name="Perplexity".ljust(25) + "🚧 experimental", value=("Perplexity", "https://api.perplexity.ai", None)
             ),
-            Choice(name="Ollama".ljust(20) + "💻 local", value=("Ollama", "http://localhost:11434/v1", "llama3.1:8b")),
-            Choice(name="Jan".ljust(20) + "💻 local", value=("Jan", "http://localhost:1337/v1", None)),
-            Choice(name="Other".ljust(20) + "🔧 provide API URL", value=("Other", None, None)),
+            Choice(
+                name="IBM watsonx".ljust(25) + "🚧 experimental",
+                value=("watsonx", None, "ibm/granite-3-8b-instruct"),
+            ),
+            Choice(name="Ollama".ljust(25) + "💻 local", value=("Ollama", "http://localhost:11434/v1", "llama3.1:8b")),
+            Choice(name="Jan".ljust(25) + "💻 local", value=("Jan", "http://localhost:1337/v1", None)),
+            Choice(name="Other (RITS, vLLM, ...)".ljust(25) + "🔧 provide API URL", value=("Other", None, None)),
         ],
     ).execute_async()
 
@@ -116,6 +121,31 @@ async def setup() -> bool:
             message="Enter the base URL of your API (OpenAI-compatible):",
             validate=lambda url: (url.startswith(("http://", "https://")) or "URL must start with http:// or https://"),
             transformer=lambda url: url.rstrip("/"),
+        ).execute_async()
+        if re.match(r"^https://[a-z0-9.-]+\.rits\.fmaas\.res\.ibm\.com/.*$", api_base):
+            provider_name = "RITS"
+            if not api_base.endswith("/v1"):
+                api_base = api_base.removesuffix("/") + "/v1"
+
+    if provider_name == "watsonx":
+        api_base = f"""https://{
+            await inquirer.select(
+                message="Select IBM Cloud region:",
+                choices=[
+                    Choice(name="us-south", value="us-south"),
+                    Choice(name="ca-tor", value="ca-tor"),
+                    Choice(name="eu-gb", value="eu-gb"),
+                    Choice(name="eu-de", value="eu-de"),
+                    Choice(name="jp-tok", value="jp-tok"),
+                    Choice(name="au-syd", value="au-syd"),
+                ],
+            ).execute_async()
+        }.ml.cloud.ibm.com"""
+        watsonx_project_or_space = await inquirer.select(
+            "Use a Project or a Space?", choices=["project", "space"]
+        ).execute_async()
+        watsonx_project_or_space_id = await inquirer.text(
+            message=f"Enter the {watsonx_project_or_space} id:"
         ).execute_async()
 
     if (api_key := os.environ.get(f"{provider_name.upper()}_API_KEY")) is None or not await inquirer.confirm(
@@ -129,26 +159,30 @@ async def setup() -> bool:
         )
 
     try:
-        with console.status("Loading available models...", spinner="dots"):
-            async with httpx.AsyncClient() as client:
-                response = await client.get(
-                    f"{api_base}/models",
-                    headers={"Authorization": f"Bearer {api_key}"},
-                    timeout=10.0,
-                )
-                if response.status_code == 404:
-                    available_models = []
-                elif response.status_code == 401:
-                    if provider_name == "Anthropic":  # Anthropic always returns 401 for /models
+        if provider_name in ["Anthropic", "watsonx"]:
+            available_models = []
+        else:
+            with console.status("Loading available models...", spinner="dots"):
+                async with httpx.AsyncClient() as client:
+                    response = await client.get(
+                        f"{api_base}/models",
+                        headers=(
+                            {"RITS_API_KEY": api_key}
+                            if provider_name == "RITS"
+                            else {"Authorization": f"Bearer {api_key}"}
+                        ),
+                        timeout=30.0,
+                    )
+                    if response.status_code == 404:
                         available_models = []
-                    else:
+                    elif response.status_code == 401:
                         console.print(
                             format_error("Error", "API key was rejected. Please check your API key and re-try.")
                         )
                         return False
-                else:
-                    response.raise_for_status()
-                    available_models = [m.get("id", "") for m in response.json().get("data", []) or []]
+                    else:
+                        response.raise_for_status()
+                        available_models = [m.get("id", "") for m in response.json().get("data", []) or []]
     except httpx.HTTPError as e:
         console.print(format_error("Error", str(e)))
         match provider_name:
@@ -182,7 +216,8 @@ async def setup() -> bool:
         selected_model = (
             recommended_model
             if (
-                (not available_models or recommended_model in available_models or provider_name == "Ollama")
+                recommended_model
+                and (not available_models or recommended_model in available_models or provider_name == "Ollama")
                 and await inquirer.confirm(
                     message=f"Do you want to use the recommended model '{recommended_model}'?"
                     + (
@@ -198,7 +233,9 @@ async def setup() -> bool:
                     message="Select a model (type to filter):",
                     choices=sorted(available_models),
                 ).execute_async()
-                if available_models
+                if available_models and len(available_models) > 1
+                else available_models[0]
+                if available_models and len(available_models) == 1
                 else await inquirer.text(message="Write a model name to use:").execute_async()
             )
         )
@@ -249,10 +286,22 @@ async def setup() -> bool:
     try:
         with console.status("Checking if the model works...", spinner="dots"):
             async with httpx.AsyncClient() as client:
+                if provider_name == "watsonx":
+                    watsonx_token_response = await client.post(
+                        "https://iam.cloud.ibm.com/identity/token",
+                        headers={"Content-Type": "application/x-www-form-urlencoded"},
+                        data=f"grant_type=urn:ibm:params:oauth:grant-type:apikey&apikey={api_key}",
+                        timeout=30.0,
+                    )
+                    watsonx_token_response.raise_for_status()
+                    watsonx_access_token = watsonx_token_response.json().get("access_token")
                 test_response = await client.post(
-                    f"{api_base}/chat/completions",
+                    (
+                        f"{api_base}/ml/v1/text/chat?version=2023-10-25"
+                        if provider_name == "watsonx"
+                        else f"{api_base}/chat/completions"
+                    ),
                     json={
-                        "model": selected_model,
                         "max_tokens": 500,  # reasoning models need some tokens to think about this
                         "messages": [
                             {
@@ -261,13 +310,23 @@ async def setup() -> bool:
                             },
                             {"role": "user", "content": "Hello!"},
                         ],
-                    },
-                    headers={"Authorization": f"Bearer {api_key}"},
-                    timeout=10.0,
+                    }
+                    | (
+                        {"model_id": selected_model, f"{watsonx_project_or_space}_id": watsonx_project_or_space_id}
+                        if provider_name == "watsonx"
+                        else {"model": selected_model}
+                    ),
+                    headers=(
+                        {"RITS_API_KEY": api_key}
+                        if provider_name == "RITS"
+                        else {"Authorization": f"Bearer {watsonx_access_token}"}
+                        if provider_name == "watsonx"
+                        else {"Authorization": f"Bearer {api_key}"}
+                    ),
+                    timeout=30.0,
                 )
-        test_response.raise_for_status()
         response_text = test_response.json().get("choices", [{}])[0].get("message", {}).get("content", "")
-        if "Hello!" not in response_text:
+        if "Hello" not in response_text:
             err_console.print(format_error("Error", "Model did not provide a proper response."))
             return False
     except Exception as e:
@@ -278,17 +337,24 @@ async def setup() -> bool:
         await api_request(
             "put",
             "variables",
-            json={"env": {"LLM_API_BASE": api_base, "LLM_API_KEY": api_key, "LLM_MODEL": selected_model}},
+            json={
+                "env": {
+                    "LLM_API_BASE": api_base,
+                    "LLM_API_KEY": api_key,
+                    "LLM_MODEL": selected_model,
+                    "WATSONX_PROJECT_ID": (
+                        watsonx_project_or_space_id
+                        if provider_name == "watsonx" and watsonx_project_or_space == "project"
+                        else None
+                    ),
+                    "WATSONX_SPACE_ID": (
+                        watsonx_project_or_space_id
+                        if provider_name == "watsonx" and watsonx_project_or_space == "space"
+                        else None
+                    ),
+                }
+            },
         )
-
-    with console.status("Reloading agents (may take a few minutes)...", spinner="dots"):
-        if not await wait_for_agents():
-            console.print(
-                "[bold red]Some agents did not properly start. Please check their status with:[/bold red] beeai info <agent>"
-            )
-            from beeai_cli.commands.agent import list_agents  # avoid circular dependency
-
-            await list_agents()
 
     console.print(
         "\n[bold green]You're all set![/bold green] (You can re-run this setup anytime with [blue]beeai env setup[/blue])"
