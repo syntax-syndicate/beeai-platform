@@ -23,7 +23,8 @@
         "pages": [
           "/how-to/run-agents",
           "/how-to/compose-agents",
-          "/how-to/import-agents"
+          "/how-to/import-agents",
+          "/how-to/cli-reference"
         ]
       },
       {
