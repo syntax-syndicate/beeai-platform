@@ -1,0 +1,95 @@
+# check
+
+["beeai-business:check"]
+depends = ["beeai-business:check:*"]
+
+["beeai-business:check:next"]
+depends = ["setup:pnpm"]
+dir = "{{config_root}}/apps/beeai-business"
+run = "pnpm next lint"
+sources = ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx"]
+outputs = { auto = true }
+
+["beeai-business:check:prettier"]
+depends = ["setup:pnpm"]
+dir = "{{config_root}}/apps/beeai-business"
+run = "pnpm prettier --log-level warn --check src"
+sources = ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx", "src/**/*.html", "src/**/*.css", "src/**/*.scss"]
+outputs = { auto = true }
+
+["beeai-business:check:eslint"]
+depends = ["setup:pnpm"]
+dir = "{{config_root}}/apps/beeai-business"
+run = "pnpm eslint src"
+sources = ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx"]
+outputs = { auto = true }
+
+["beeai-business:check:tsc"]
+depends = ["setup:pnpm", "beeai-business:check:next"]
+dir = "{{config_root}}/apps/beeai-business"
+run = "pnpm tsc --noEmit -p tsconfig.json"
+sources = ["src/**/*.ts", "src/**/*.tsx"]
+outputs = { auto = true }
+
+["beeai-business:check:stylelint"]
+depends = ["setup:pnpm"]
+dir = "{{config_root}}/apps/beeai-business"
+run = "pnpm stylelint src/**/*.css src/**/*.scss"
+sources = ["src/**/*.css", "src/**/*.scss"]
+outputs = { auto = true }
+
+# fix
+
+["beeai-business:fix"]
+depends = ["beeai-business:fix:*"]
+
+["beeai-business:fix:prettier"]
+depends = ["setup:pnpm"]
+dir = "{{config_root}}/apps/beeai-business"
+run = "pnpm prettier --log-level silent --write src"
+sources = ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx", "src/**/*.html", "src/**/*.css", "src/**/*.scss"]
+outputs = { auto = true }
+
+["beeai-business:fix:eslint"]
+depends = ["setup:pnpm"]
+dir = "{{config_root}}/apps/beeai-business"
+run = "pnpm eslint --fix src"
+sources = ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx"]
+outputs = { auto = true }
+
+["beeai-business:fix:stylelint"]
+depends = ["setup:pnpm"]
+dir = "{{config_root}}/apps/beeai-business"
+run = "pnpm stylelint --fix=lax src/**/*.css src/**/*.scss"
+sources = ["src/**/*.css", "src/**/*.scss"]
+outputs = { auto = true }
+
+# run
+
+["beeai-business:run"]
+description = "NOTE: You also need to have `beeai-server` running for the backend"
+depends = ["setup:pnpm"]
+dir = "{{config_root}}/apps/beeai-business"
+run = "pnpm dev"
+
+# build
+
+["beeai-business:build"]
+depends = ["setup:pnpm"]
+dir = "{{config_root}}/apps/beeai-business"
+run = "pnpm build"
+sources = ["*.json", "*.js", "index.html", "src/**/*.tsx", "src/**/*.ts"]
+outputs = [".next/**/*"]
+
+# preview
+
+["beeai-business:preview"]
+depends = ["setup:pnpm"]
+dir = "{{config_root}}/apps/beeai-business"
+run = "pnpm preview"
+
+# clean
+
+["beeai-business:clean"]
+dir = "{{config_root}}/apps/beeai-business"
+run = "rm -rf ./.next"

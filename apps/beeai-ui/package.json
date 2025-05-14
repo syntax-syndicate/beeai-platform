@@ -1,6 +1,6 @@
 {
   "name": "@i-am-bee/beeai-ui",
-  "autor": "IBM Corp.",
+  "author": "IBM Corp.",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -25,7 +25,7 @@
     "@carbon/icons-react": "^11.57.0",
     "@carbon/layout": "^11.31.0",
     "@carbon/motion": "^11.25.0",
-    "@carbon/react": "^1.79.0",
+    "@carbon/react": "catalog:",
     "@carbon/styles": "^1.78.0",
     "@floating-ui/react": "^0.27.5",
     "@ibm/plex": "^6.4.1",

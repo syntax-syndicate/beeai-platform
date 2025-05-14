@@ -1,11 +1,15 @@
 packages:
+  - apps/beeai-business
   - apps/beeai-ui
   - apps/beeai-web
   - docs
 
 catalog:
+  "@carbon/react": "^1.82.1"
   "@eslint/js": "^9.23.0"
+  "@svgr/webpack": "^8.1.0"
   eslint: "^9.23.0"
+  eslint-config-prettier: "^10.1.5"
   eslint-plugin-react-hooks: "^5.2.0"
   eslint-plugin-react-refresh: "^0.4.16"
   eslint-plugin-simple-import-sort: "^12.1.1"

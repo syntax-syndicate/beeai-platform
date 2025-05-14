@@ -1,0 +1,42 @@
+{
+  "name": "@i-am-bee/beeai-business",
+  "author": "IBM Corp.",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "preview": "next start",
+    "check": "prettier --log-level warn --check src && eslint src && tsc --noEmit -p tsconfig.json && stylelint src/**/*.css src/**/*.scss",
+    "fix": "prettier --log-level silent --write src && eslint --fix src && stylelint --fix=lax src/**/*.css src/**/*.scss",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@carbon/react": "catalog:",
+    "@i-am-bee/beeai-ui": "workspace:*",
+    "next": "15.3.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@next/eslint-plugin-next": "15.3.2",
+    "@svgr/webpack": "catalog:",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "catalog:",
+    "eslint-config-next": "15.3.2",
+    "eslint-config-prettier": "catalog:",
+    "eslint-plugin-react-hooks": "catalog:",
+    "eslint-plugin-react-refresh": "catalog:",
+    "eslint-plugin-simple-import-sort": "catalog:",
+    "prettier": "catalog:",
+    "sass-embedded": "catalog:",
+    "stylelint": "catalog:",
+    "stylelint-config-css-modules": "catalog:",
+    "stylelint-config-recommended-scss": "catalog:",
+    "stylelint-plugin-logical-css": "catalog:",
+    "typescript": "catalog:"
+  }
+}
