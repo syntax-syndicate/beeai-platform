@@ -18,14 +18,14 @@ import fastapi
 from starlette.status import HTTP_202_ACCEPTED
 
 from beeai_server.custom_types import ID
-from beeai_server.domain.provider.model import GithubProviderLocation
-from beeai_server.routes.dependencies import ProviderServiceDependency
-from beeai_server.schema import (
+from beeai_server.domain.models.provider import GithubProviderLocation
+from beeai_server.api.routes.dependencies import ProviderServiceDependency
+from beeai_server.api.schema import (
     CreateManagedProviderRequest,
-    PaginatedResponse,
     ProviderWithStatus,
     RegisterUnmanagedProviderRequest,
 )
+from beeai_server.api.schema.common import PaginatedResponse
 from fastapi import Query, BackgroundTasks, HTTPException, UploadFile
 from fastapi.responses import Response
 from starlette.responses import StreamingResponse
@@ -43,12 +43,6 @@ async def import_image(file: UploadFile, provider_service: ProviderServiceDepend
             yield chunk
 
     await provider_service.import_image(data=_file_stream(), image_id=DockerImageID(root=file.filename))
-
-
-@router.get("/image/{image_id}")
-async def check_image(image_id: str, provider_service: ProviderServiceDependency) -> bool:
-    await provider_service.check_image(image_hash=image_id)
-    return True
 
 
 @router.post("/register/managed")

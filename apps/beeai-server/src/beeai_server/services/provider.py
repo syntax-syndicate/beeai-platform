@@ -17,31 +17,30 @@ from __future__ import annotations
 import json
 import logging
 from contextlib import suppress
-from typing import AsyncIterator, Callable, Coroutine, overload
+from typing import AsyncIterator, Callable
 
-import anyio
 from fastapi import HTTPException
 from kink import inject
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND
 
-from beeai_server.adapters.interface import IProviderRepository, IEnvVariableRepository, IContainerBackend
+from beeai_server.adapters.interface import (
+    IProviderRepository,
+    IEnvVariableRepository,
+    IProviderDeploymentManager,
+)
 from beeai_server.custom_types import ID
-from beeai_server.domain.provider.model import (
+from beeai_server.domain.models.provider import (
     ProviderLocation,
-    Agent,
     BaseProvider,
-    ProviderStatus,
+    ProviderDeploymentStatus,
+    # ProviderStatus,
     ProviderErrorMessage,
 )
-from beeai_server.domain.provider.container import (
-    ProviderContainer,
-    LoadedProvider,
-)
-from beeai_server.domain.registry import RegistryLocation
-from beeai_server.schema import ProviderWithStatus
+from beeai_server.domain.models.agent import Agent
+from beeai_server.domain.provider.container import ProviderContainer, LoadedProvider
+from beeai_server.domain.models.registry import RegistryLocation
+from beeai_server.api.schema import ProviderWithStatus
 from beeai_server.exceptions import ManifestLoadError
-from beeai_server.utils.docker import DockerImageID
-from beeai_server.utils.logs_container import LogsContainer
 
 logger = logging.getLogger(__name__)
 
@@ -53,21 +52,11 @@ class ProviderService:
         provider_repository: IProviderRepository,
         loaded_provider_container: ProviderContainer,
         env_repository: IEnvVariableRepository,
+        deployment_manager: IProviderDeploymentManager,
     ):
         self._repository = provider_repository
         self._loaded_provider_container = loaded_provider_container
         self._env_repository = env_repository
-
-    @inject
-    async def import_image(
-        self, *, data: AsyncIterator[bytes], image_id: DockerImageID, container_backend: IContainerBackend
-    ):
-        await container_backend.import_image(data=data, image_id=image_id)
-
-    @inject
-    async def check_image(self, *, image_hash: str, container_backend: IContainerBackend):
-        if not await container_backend.check_image(image=image_hash):
-            raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Image with ID: {str(image_hash)} not found")
 
     async def register_provider(
         self, *, location: ProviderLocation, registry: RegistryLocation | None = None, persist: bool = True
@@ -121,7 +110,7 @@ class ProviderService:
                 result_providers.append(
                     ProviderWithStatus(
                         **provider.model_dump(),
-                        status=ProviderStatus.not_loaded,
+                        status=ProviderDeploymentStatus.missing,
                         missing_configuration=[
                             var for var in provider.check_env(env, raise_error=False) if var.required
                         ],
@@ -130,64 +119,12 @@ class ProviderService:
                 )
         return result_providers
 
-    @overload
-    async def install_provider(
-        self, *, id: ID | None = None, location: ProviderLocation | None = None, stream: True
-    ) -> Callable[..., AsyncIterator[str]]: ...
-
-    @overload
-    async def install_provider(
-        self, *, id: ID | None = None, location: ProviderLocation | None = None, stream: False = False
-    ) -> Callable[..., Coroutine[..., None, None]]: ...
-
-    async def install_provider(
-        self, *, id: ID | None = None, location: ProviderLocation | None = None, stream: bool = False
-    ) -> Callable[..., AsyncIterator[str] | Coroutine[..., None, None]]:
-        if not (bool(id) ^ bool(location)):
-            raise ValueError("Either id or location must be provided")
-
-        logs_container = LogsContainer()
-        if id:
-            provider = await self.get_provider(id=id)
-            if provider.id not in self._loaded_provider_container.loaded_providers:
-                raise ValueError("Provider is not loaded")
-
-            async def _install():
-                await self._loaded_provider_container.loaded_providers[id].install(logs_container=logs_container)
-        else:
-            source = await location.get_source()
-
-            async def _install():
-                await source.install(logs_container=logs_container)
-                await self.register_provider(location=location)
-
-        if stream:
-
-            async def logs_iterator() -> AsyncIterator[str]:
-                async with anyio.create_task_group() as task_group:
-
-                    async def cancel_on_finish(coro):
-                        await coro
-                        task_group.cancel_scope.cancel()
-
-                    task_group.start_soon(cancel_on_finish, _install())
-
-                    async with logs_container.stream() as stream:
-                        async for message in stream:
-                            yield json.dumps(message.model_dump(mode="json"))
-
-            return logs_iterator
-
-        return _install
-
     async def delete_provider(self, *, id: ID, force: bool = False):
         provider = await self.get_provider(id=id)
         provider = self._loaded_provider_container.loaded_providers[provider.id]
 
-        if getattr(provider.provider, "registry", None) and not force:
-            await provider.uninstall()
-        else:
-            await provider.uninstall()
+        # Providers from the registry cannot be removed if not forced
+        if getattr(provider.provider, "registry", None) is None or force:
             with suppress(ValueError):  # unpersisted providers are not found in repository
                 await self._repository.delete(provider_id=id)
             await self._loaded_provider_container.remove(provider)

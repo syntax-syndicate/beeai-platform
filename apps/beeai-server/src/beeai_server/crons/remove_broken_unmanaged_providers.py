@@ -17,7 +17,7 @@ from datetime import timedelta
 
 import anyio
 from beeai_server.configuration import Configuration
-from beeai_server.domain.provider.model import UnmanagedProvider, ProviderStatus
+from beeai_server.domain.models.provider import UnmanagedProvider, ProviderStatus
 from beeai_server.domain.provider.container import ProviderContainer, LoadedProvider
 from beeai_server.utils.periodic import periodic
 from beeai_server.utils.utils import extract_messages

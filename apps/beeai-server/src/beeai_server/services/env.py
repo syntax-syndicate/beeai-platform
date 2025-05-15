@@ -28,7 +28,7 @@ class EnvService:
 
     async def update_env(self, *, env: dict[str, str | None]) -> Callable[..., Coroutine[None, None, None]]:
         await self._repository.update(env)
-        return self._loaded_provider_container.handle_reload_on_env_update
+        # return self._loaded_provider_container.handle_reload_on_env_update
 
     async def list_env(self) -> dict[str, str]:
         return await self._repository.get_all()

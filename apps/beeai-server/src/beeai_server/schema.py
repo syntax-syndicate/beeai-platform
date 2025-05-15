@@ -12,54 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import TypeVar, Generic, Any
-from pydantic import BaseModel, RootModel, Field
+from pydantic import BaseModel, Field
 
 from beeai_server.custom_types import ID
-from beeai_server.domain.provider.model import (
-    ProviderLocation,
-    EnvVar,
+from beeai_server.domain.models.provider import (
     ProviderManifest,
     ProviderStatus,
     ProviderErrorMessage,
-    NetworkProviderLocation,
 )
-from beeai_server.domain.registry import RegistryLocation
-
-BaseModelT = TypeVar("BaseModelT", bound=BaseModel)
-
-
-class PaginatedResponse(BaseModel, Generic[BaseModelT]):
-    items: list[BaseModelT]
-    total_count: int
+from beeai_server.domain.models.agent import EnvVar
+from beeai_server.domain.models.registry import RegistryLocation
 
 
-class CreateManagedProviderRequest(BaseModel):
-    location: ProviderLocation
-
-
-class InstallProviderRequest(BaseModel):
-    location: ProviderLocation
-
-
-class RegisterUnmanagedProviderRequest(BaseModel):
-    location: NetworkProviderLocation
-    id: ID | None = Field(default=None, deprecated=True)
-
-
-class UpdateVariablesRequest(BaseModel):
-    env: dict[str, str | None]
-
-
-class ListVariablesSchema(BaseModel):
-    env: dict[str, str]
-
-
-class UpdateTelemetryConfigRequest(BaseModel):
-    sharing_enabled: bool
-
-
-RunAgentInput = RootModel[dict[str, Any]]
 
 
 class ProviderWithStatus(BaseModel, extra="allow"):

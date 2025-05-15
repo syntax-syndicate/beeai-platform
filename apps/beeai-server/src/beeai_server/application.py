@@ -28,7 +28,7 @@ from starlette.requests import Request
 
 from beeai_server.adapters.interface import IProviderRepository
 from beeai_server.domain.provider.container import ProviderContainer
-from beeai_server.domain.provider.model import ProviderStatus
+from beeai_server.domain.models.provider import ProviderStatus
 from beeai_server.utils.fastapi import NoCacheStaticFiles
 from fastapi import FastAPI, APIRouter
 from fastapi import HTTPException
@@ -42,15 +42,14 @@ from opentelemetry.metrics import get_meter, Observation, CallbackOptions
 from fastapi.exceptions import RequestValidationError
 
 from beeai_server.telemetry import INSTRUMENTATION_NAME, shutdown_telemetry
-from beeai_server.domain.telemetry import TelemetryCollectorManager
 from beeai_server.bootstrap import bootstrap_dependencies_sync
 from beeai_server.configuration import Configuration
 from beeai_server.exceptions import ManifestLoadError, ProviderNotInstalledError
-from beeai_server.routes.provider import router as provider_router
-from beeai_server.routes.acp import router as acp_router
-from beeai_server.routes.env import router as env_router
-from beeai_server.routes.telemetry import router as telemetry_router
-from beeai_server.routes.llm import router as llm_router
+from beeai_server.api.routes.provider import router as provider_router
+from beeai_server.api.routes.acp import router as acp_router
+from beeai_server.api.routes.env import router as env_router
+from beeai_server.api.routes.telemetry import router as telemetry_router
+from beeai_server.api.routes.llm import router as llm_router
 
 logger = logging.getLogger(__name__)
 

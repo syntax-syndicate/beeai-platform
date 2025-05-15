@@ -20,7 +20,7 @@ from functools import partial
 
 
 from beeai_server.configuration import Configuration
-from beeai_server.domain.provider.model import ProviderStatus
+from beeai_server.domain.models.provider import ProviderStatus
 from beeai_server.services.provider import ProviderService
 from beeai_server.utils.periodic import periodic
 from kink import inject, di

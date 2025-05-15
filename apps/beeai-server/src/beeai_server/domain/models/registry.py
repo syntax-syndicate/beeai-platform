@@ -17,18 +17,18 @@ from typing import Any, TYPE_CHECKING
 import httpx
 import yaml
 from anyio import Path
-from pydantic import BaseModel, RootModel, FileUrl, AnyHttpUrl
+from pydantic import BaseModel, RootModel, FileUrl, HttpUrl
 
 from beeai_server.utils.github import GithubUrl
 
 if TYPE_CHECKING:
     # Workaround to prevent cyclic imports
     # Models from this file are used in config which is used everywhere throughout the codebase
-    from beeai_server.domain.provider.model import ProviderLocation
+    from beeai_server.domain.models.provider import ProviderLocation
 
 
 def parse_providers_manifest(content: dict[str, Any]) -> list["ProviderLocation"]:
-    from beeai_server.domain.provider.model import ProviderLocation
+    from beeai_server.domain.models.provider import ProviderLocation
 
     class ProviderRegistryRecord(BaseModel, extra="allow"):
         location: ProviderLocation
@@ -40,7 +40,7 @@ def parse_providers_manifest(content: dict[str, Any]) -> list["ProviderLocation"
 
 
 class NetworkRegistryLocation(RootModel):
-    root: AnyHttpUrl
+    root: HttpUrl
 
     async def load(self) -> list["ProviderLocation"]:
         async with httpx.AsyncClient(
@@ -55,7 +55,7 @@ class GithubRegistryLocation(RootModel):
 
     async def load(self) -> list["ProviderLocation"]:
         resolved_url = await self.root.resolve_version()
-        network_location = NetworkRegistryLocation(root=AnyHttpUrl(resolved_url.get_raw_url()))
+        network_location = NetworkRegistryLocation(root=HttpUrl(resolved_url.get_raw_url()))
         return await network_location.load()
 
 

@@ -27,7 +27,7 @@ from beeai_server.adapters.interface import (
     TelemetryConfig,
     NOT_SET,
 )
-from beeai_server.domain.provider.model import Provider
+from beeai_server.domain.models.provider import Provider
 from beeai_server.utils.utils import filter_dict
 
 
@@ -48,7 +48,7 @@ class FilesystemProviderRepository(IProviderRepository):
         await self._config_path.write_text(config)
         self._repository_providers = providers
 
-    async def sync(self) -> None:
+    async def _sync(self) -> None:
         if not await self._config_path.exists():
             self._repository_providers = []
             return
@@ -64,7 +64,7 @@ class FilesystemProviderRepository(IProviderRepository):
 
     async def list(self) -> list[Provider]:
         if self._repository_providers is None:
-            await self.sync()
+            await self._sync()
         return self._repository_providers
 
     async def create(self, *, provider: Provider) -> None:
@@ -97,7 +97,7 @@ class FilesystemEnvVariableRepository(IEnvVariableRepository):
         self._env_file_path = AsyncPath(env_variable_path)
         self._env: dict[str, str] | None = None
 
-    async def sync(self):
+    async def _sync(self):
         if not await self._env_file_path.exists():
             self._env = {}
             return
@@ -112,7 +112,7 @@ class FilesystemEnvVariableRepository(IEnvVariableRepository):
 
     async def get_all(self) -> dict[str, str]:
         if self._env is None:
-            await self.sync()
+            await self._sync()
         return self._env
 
     async def _write_config(self, env: dict[str, str]) -> None:
@@ -144,7 +144,7 @@ class FilesystemTelemetryRepository(ITelemetryRepository):
         # We do not handle conflicts - if the file was updated in the meantime, we override it with new values
         await self._config_path.write_text(config)
 
-    async def sync(self) -> None:
+    async def _sync(self) -> None:
         if not await self._config_path.exists():
             if not self._config:
                 self._config = TelemetryConfig()
@@ -164,5 +164,5 @@ class FilesystemTelemetryRepository(ITelemetryRepository):
 
     async def get(self) -> TelemetryConfig:
         if not self._config:
-            await self.sync()
+            await self._sync()
         return self._config

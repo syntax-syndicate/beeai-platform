@@ -14,8 +14,8 @@
 
 import fastapi
 
-from beeai_server.schema import UpdateTelemetryConfigRequest
-from beeai_server.routes.dependencies import TelemetryServiceDependency
+from beeai_server.api.schema import UpdateTelemetryConfigRequest
+from beeai_server.api.routes.dependencies import TelemetryServiceDependency
 
 router = fastapi.APIRouter()
 
@@ -27,5 +27,5 @@ async def read_config(telemetry_service: TelemetryServiceDependency):
 
 @router.put("")
 async def update_config(request: UpdateTelemetryConfigRequest, telemetry_service: TelemetryServiceDependency):
-    await telemetry_service.update_config(sharing_enabled=request.sharing_enabled)
+    # await telemetry_service.update_config(sharing_enabled=request.sharing_enabled)
     return await telemetry_service.read_config()

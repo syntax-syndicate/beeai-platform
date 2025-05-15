@@ -16,7 +16,6 @@ from kink import inject
 
 from beeai_server.adapters.interface import ITelemetryRepository
 from beeai_server.configuration import Configuration
-from beeai_server.domain.telemetry import TelemetryCollectorManager
 
 
 @inject
@@ -24,11 +23,11 @@ class TelemetryService:
     def __init__(
         self,
         collector_repository: ITelemetryRepository,
-        collector_manager: TelemetryCollectorManager,
+        # collector_manager: TelemetryCollectorManager,
         config: Configuration,
     ):
         self._repository = collector_repository
-        self._manager = collector_manager
+        # self._manager = collector_manager
         self._config = config
 
     async def read_config(self):
@@ -38,9 +37,4 @@ class TelemetryService:
     async def update_config(self, *, sharing_enabled: bool):
         config = await self._repository.get()
         await self._repository.set(config=config.model_copy(update={"sharing_enabled": sharing_enabled}))
-        await self.sync()
-
-    async def sync(self):
-        await self._repository.sync()
-        if self._config.collector_managed:
-            await self._manager.reload()
+        # await self._manager.reload()

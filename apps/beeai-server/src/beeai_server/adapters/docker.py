@@ -54,26 +54,6 @@ class DockerContainerBackend(IContainerBackend):
         config: OCIRegistryConfiguration = self.configuration.oci_registry[destination.registry]
         return config.basic_auth_str and {"auth": config.basic_auth_str}
 
-    async def configure_host_docker_internal(self):
-        """Set extra_hosts if `host.docker.internal` is not configured for containers."""
-
-        async with self._docker as docker:
-            alpine = "alpine:3.21.3"
-            try:
-                await docker.images.inspect(alpine)
-            except DockerError:
-                await docker.images.pull(alpine)
-            container = await docker.containers.create_or_replace(
-                name="beeai-host-network-test",
-                config={"Image": "alpine:3.21.3", "Cmd": ["getent", "hosts", "host.docker.internal"]},
-            )
-            await container.start()
-            resp = await container.wait()
-            if resp["StatusCode"] == 0:
-                return
-        logger.warning("host.docker.internal not configured for docker, falling back to 'host-gateway' configuration")
-        self._extra_hosts = ["host.docker.internal:host-gateway"]
-
     async def import_image(self, *, data: AsyncIterator[bytes], image_id: DockerImageID):
         async with self._docker as docker:
             resp = await docker.images.import_image(data=data)

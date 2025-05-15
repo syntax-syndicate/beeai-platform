@@ -19,9 +19,9 @@ from datetime import timedelta
 from functools import cache
 from pathlib import Path
 
-from beeai_server.domain.registry import GithubRegistryLocation, RegistryLocation
+from beeai_server.domain.models.registry import GithubRegistryLocation, RegistryLocation
 from beeai_server.utils.github import GithubUrl
-from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator, AnyHttpUrl
+from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator, HttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -81,7 +81,7 @@ class Configuration(BaseSettings):
     cache_dir: Path = Path.home() / ".beeai" / "cache"
 
     port: int = 8333
-    collector_host: AnyHttpUrl | None = "http://localhost:8335/"
+    collector_host: HttpUrl | None = "http://localhost:8335/"
     collector_managed: bool = True
 
     disable_docker: bool = False

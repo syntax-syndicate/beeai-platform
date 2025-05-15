@@ -15,8 +15,8 @@
 import fastapi
 from fastapi.background import BackgroundTasks
 
-from beeai_server.routes.dependencies import EnvServiceDependency
-from beeai_server.schema import UpdateVariablesRequest, ListVariablesSchema
+from beeai_server.api.routes.dependencies import EnvServiceDependency
+from beeai_server.api.schema import UpdateVariablesRequest, ListVariablesSchema
 
 router = fastapi.APIRouter()
 

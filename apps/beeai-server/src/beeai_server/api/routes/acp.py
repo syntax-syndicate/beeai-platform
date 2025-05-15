@@ -20,7 +20,6 @@ import fastapi.responses
 import httpx
 from acp_sdk.models import (
     AgentName,
-    AgentsListResponse as AcpAgentsListResponse,
     RunCancelResponse,
     RunCreateRequest,
     RunCreateResponse,
@@ -30,18 +29,10 @@ from acp_sdk.models import (
     RunResumeResponse,
 )
 
-from beeai_server.domain.provider.model import Agent
-from beeai_server.routes.dependencies import ProviderServiceDependency
+from beeai_server.api.schema.acp import AgentsListResponse, AgentReadResponse
+from beeai_server.api.routes.dependencies import ProviderServiceDependency
 
 router = fastapi.APIRouter()
-
-
-class AgentsListResponse(AcpAgentsListResponse):
-    agents: list[Agent]
-
-
-class AgentReadResponse(Agent):
-    pass
 
 
 @router.get("/agents")
