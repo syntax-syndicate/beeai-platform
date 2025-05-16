@@ -1,72 +1,68 @@
+from datetime import timedelta
+from typing import AsyncIterator
 from uuid import UUID
 
-from sqlalchemy import Table, Column, String, JSON, ForeignKey, MetaData, UUID as SqlUUID
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import Table, Column, String, UUID as SqlUUID, Integer, JSON, Row
+from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import select, insert, delete
 
-from beeai_server.domain.models.agent import Agent, AgentRun
-from beeai_server.domain.models.provider import ManagedProvider
-from beeai_server.domain.repositories.agent import IAgentRepository
+from beeai_server.domain.models.provider import Provider
+from beeai_server.domain.repositories.provider import IProviderRepository
 from beeai_server.exceptions import EntityNotFoundError
-
-metadata = MetaData()
+from beeai_server.infrastructure.persistence.repositories.db_metadata import metadata
 
 providers_table = Table(
     "providers",
     metadata,
     Column("id", SqlUUID, primary_key=True),
-    Column("name", String, unique=True, nullable=False),
-    Column("description", String, nullable=True),
-    Column("provider_id", ForeignKey("providers.id", ondelete="CASCADE"), nullable=False),
-    Column("metadata", JSON, nullable=False),
+    Column("source", String(2048), nullable=False),
+    Column("registry", String(2048), nullable=True),
+    Column("env", JSON, nullable=False),
+    Column("auto_stop_timeout_sec", Integer, nullable=False),
 )
 
 
-class SqlAlchemyAgentRepository(IAgentRepository):
-    def __init__(self, session: AsyncSession):
-        self.session = session
+class SqlAlchemyProviderRepository(IProviderRepository):
+    def __init__(self, connection: AsyncConnection):
+        self.session = connection
 
-    async def create(self, provider: ManagedProvider) -> None:
-        if not agents:
-            return
+    async def create(self, provider: Provider) -> None:
         query = insert(providers_table).values(
-            [
-                {
-                    "id": agent.id,
-                    "name": agent.name,
-                    "description": agent.description,
-                    "provider_id": agent.provider_id,
-                    "metadata": agent.metadata.model_dump(),
-                }
-                for agent in agents
-            ]
+            {
+                "id": provider.id,
+                "auto_stop_timeout_sec": int(
+                    provider.auto_stop_timeout.total_seconds() if provider.auto_stop_timeout else None
+                ),
+                "source": str(provider.source.root),
+                "registry": str(provider.registry.root),
+                "env": [env.model_dump(mode="json") for env in provider.env],
+            }
         )
         await self.session.execute(query)
 
-    async def get_agent(self, *, name: str) -> Agent:
-        query = select(agents_table).where(agents_table.c.name == name)
+    def _to_provider(self, row: Row) -> Provider:
+        return Provider.model_validate(
+            {
+                # ID is determined by source
+                "source": row.source,
+                "registry": row.registry,
+                "auto_stop_timeout": timedelta(seconds=row.auto_stop_timeout_sec),
+                "env": row.env,
+            }
+        )
+
+    async def get(self, *, provider_id: UUID) -> Provider:
+        query = select(providers_table).where(providers_table.c.id == provider_id)
         result = await self.session.execute(query)
         if not (row := result.fetchone()):
-            raise EntityNotFoundError(entity="agent", id=name)
+            raise EntityNotFoundError(entity="provider", id=provider_id)
 
-        return Agent.model_validate(dict(row))
+        return self._to_provider(row)
 
-    async def create_run(self, *, run: AgentRun) -> None:
-        query = insert(agent_runs_table).values(id=run.id, acp_run_id=run.acp_run_id, agent_id=run.agent_id)
+    async def delete(self, *, provider_id: UUID) -> None:
+        query = delete(providers_table).where(providers_table.c.id == provider_id)
         await self.session.execute(query)
 
-    async def delete_run(self, *, run_id: UUID) -> None:
-        query = delete(agent_runs_table).where(agent_runs_table.c.id == run_id)
-        await self.session.execute(query)
-        await self.session.commit()
-
-    async def find_by_run_id(self, *, run_id: UUID) -> Agent:
-        result = await self.session.execute(
-            select(agents_table)
-            .join(agent_runs_table, agents_table.c.id == agent_runs_table.c.agent_id)
-            .where(agent_runs_table.c.id == run_id)
-        )
-        if not (row := result.fetchone()):
-            raise EntityNotFoundError(entity="agent_run", run_id=run_id)
-
-        return Agent.model_validate(dict(row))
+    async def list(self) -> AsyncIterator[Provider]:
+        async for row in await self.session.stream(select(providers_table)):
+            yield self._to_provider(row)

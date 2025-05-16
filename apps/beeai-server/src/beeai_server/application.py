@@ -26,9 +26,6 @@ from acp_sdk.server.errors import (
 )
 from starlette.requests import Request
 
-from beeai_server.adapters.interface import IProviderRepository
-from beeai_server.domain.provider.container import ProviderContainer
-from beeai_server.domain.models.provider import ProviderStatus
 from beeai_server.utils.fastapi import NoCacheStaticFiles
 from fastapi import FastAPI, APIRouter
 from fastapi import HTTPException
@@ -128,8 +125,7 @@ def mount_routes(app: FastAPI):
     app.mount("/", ui_app)
 
 
-@inject
-def register_telemetry(provider_container: ProviderContainer):
+def register_telemetry():
     meter = get_meter(INSTRUMENTATION_NAME)
 
     def scrape_platform_status(options: CallbackOptions) -> Iterable[Observation]:
@@ -137,45 +133,32 @@ def register_telemetry(provider_container: ProviderContainer):
 
     meter.create_observable_gauge("platform_status", callbacks=[scrape_platform_status])
 
-    def scrape_providers_by_status(options: CallbackOptions) -> Iterable[Observation]:
-        providers = provider_container.loaded_providers.values()
-        for status in ProviderStatus:
-            count = 0
-            for provider in providers:
-                if provider.status == status:
-                    count += 1
-            yield Observation(
-                value=count,
-                attributes={
-                    "status": status,
-                },
-            )
+    # def scrape_providers_by_status(options: CallbackOptions) -> Iterable[Observation]:
+    #     providers = provider_container.loaded_providers.values()
+    #     for status in ProviderStatus:
+    #         count = 0
+    #         for provider in providers:
+    #             if provider.state == status:
+    #                 count += 1
+    #         yield Observation(
+    #             value=count,
+    #             attributes={
+    #                 "status": status,
+    #             },
+    #         )
 
-    meter.create_observable_gauge("providers_by_status", callbacks=[scrape_providers_by_status])
+    # meter.create_observable_gauge("providers_by_status", callbacks=[scrape_providers_by_status])
 
 
 @asynccontextmanager
 @inject
-async def lifespan(
-    _app: FastAPI,
-    provider_container: ProviderContainer,
-    telemetry_collector_manager: TelemetryCollectorManager,
-    provider_repository: IProviderRepository,
-):
-    from beeai_server.crons.sync_registry_providers import preinstall_background_tasks
+async def lifespan(_app: FastAPI):
     from beeai_server.utils.periodic import run_all_crons
 
-    register_telemetry()
-    for provider in await provider_repository.list():
-        await provider_container.add(provider)
-
-    async with provider_container, telemetry_collector_manager, run_all_crons():
+    async with run_all_crons():
         try:
             yield
         finally:
-            # Cancel unfinished installation tasks
-            for task in preinstall_background_tasks.values():
-                task.cancel()
             shutdown_telemetry()
 
 

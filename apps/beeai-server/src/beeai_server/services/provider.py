@@ -14,33 +14,28 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
-from contextlib import suppress
 from typing import AsyncIterator, Callable
+from uuid import UUID
 
 from fastapi import HTTPException
 from kink import inject
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND
 
 from beeai_server.adapters.interface import (
-    IProviderRepository,
-    IEnvVariableRepository,
     IProviderDeploymentManager,
 )
-from beeai_server.custom_types import ID
 from beeai_server.domain.models.provider import (
     ProviderLocation,
-    BaseProvider,
-    ProviderDeploymentStatus,
-    # ProviderStatus,
-    ProviderErrorMessage,
+    Provider,
+    ProviderWithState,
 )
-from beeai_server.domain.models.agent import Agent
-from beeai_server.domain.provider.container import ProviderContainer, LoadedProvider
 from beeai_server.domain.models.registry import RegistryLocation
-from beeai_server.api.schema import ProviderWithStatus
 from beeai_server.exceptions import ManifestLoadError
+from beeai_server.services.unit_of_work import IUnitOfWorkFactory
+from beeai_server.utils.logs_container import LogsContainer
 
 logger = logging.getLogger(__name__)
 
@@ -49,127 +44,91 @@ logger = logging.getLogger(__name__)
 class ProviderService:
     def __init__(
         self,
-        provider_repository: IProviderRepository,
-        loaded_provider_container: ProviderContainer,
-        env_repository: IEnvVariableRepository,
         deployment_manager: IProviderDeploymentManager,
+        uow: IUnitOfWorkFactory,
     ):
-        self._repository = provider_repository
-        self._loaded_provider_container = loaded_provider_container
-        self._env_repository = env_repository
+        self._uow = uow
+        self._deployment_manager = deployment_manager
 
-    async def register_provider(
-        self, *, location: ProviderLocation, registry: RegistryLocation | None = None, persist: bool = True
-    ) -> ProviderWithStatus:
+    async def create_provider(
+        self, *, location: ProviderLocation, registry: RegistryLocation | None = None
+    ) -> ProviderWithState:
         try:
-            provider = await location.load(registry=registry, persistent=persist)
-            all_agents = {a.name for a in await self.list_agents()}
-            provider_agents = {a.name for a in provider.manifest.agents}
-            env = await self._env_repository.get_all()
-            if would_override := set(provider_agents) & set(all_agents):
-                loaded_providers = self._loaded_provider_container.loaded_providers.values()
-                loaded_persistent_agents = {a.name for p in loaded_providers if p.provider.persistent for a in p.agents}
-                if duplicate_agents := set(provider_agents) & set(loaded_persistent_agents):
-                    raise ValueError(f"Duplicate agents: {duplicate_agents} are already registered to the platform.")
-                else:
-                    logger.warning(f"Overriding unpersisted agents: {would_override}")
-            if persist:
-                await self._repository.create(provider=provider)
+            agents = await location.load_agents(provider_id=location.provider_id)
+            provider_env = {env.name: env for agent in agents for env in agent.metadata.env}
+            provider = Provider(source=location, registry=registry, env=list(provider_env.values()))
         except ValueError as ex:
             raise ManifestLoadError(location=location, message=str(ex), status_code=HTTP_400_BAD_REQUEST) from ex
         except Exception as ex:
             raise ManifestLoadError(location=location, message=str(ex)) from ex
-        await self._loaded_provider_container.add_or_replace(provider)
-        return self._get_providers_with_status(providers=[provider], env=env)[0]
+
+        async with self._uow() as uow:
+            env = await uow.env.get_all()
+            await uow.providers.create(provider=provider)
+            await uow.agents.bulk_create(agents)
+            if provider.managed:
+                await self._deployment_manager.create_or_replace(provider=provider, env=env)
+            await uow.commit()
+        [provider_response] = await self._get_providers_with_state(providers=[provider])
+        return provider_response
 
     async def preview_provider(self, location: ProviderLocation):
         try:
-            provider = await location.load()
-            env = await self._env_repository.get_all()
-            return self._get_providers_with_status(providers=[provider], env=env)[0]
+            agents = await location.load_agents(provider_id=location.provider_id)
+            provider_env = {env.name: env for agent in agents for env in agent.metadata.env}
+            provider = Provider(source=location, env=list(provider_env.values()))
+            [provider_response] = await self._get_providers_with_state(providers=[provider])
+            return provider_response
         except ValueError as ex:
             raise ManifestLoadError(location=location, message=str(ex), status_code=HTTP_400_BAD_REQUEST) from ex
         except Exception as ex:
             raise ManifestLoadError(location=location, message=str(ex)) from ex
 
-    def _get_providers_with_status(
-        self, providers: list[BaseProvider], env: dict[str, str]
-    ) -> list[ProviderWithStatus]:
+    async def _get_providers_with_state(self, providers: list[Provider]) -> list[ProviderWithState]:
         result_providers = []
-        for provider in providers:
-            if loaded_provider := self._loaded_provider_container.loaded_providers.get(provider.id, None):
-                result_providers.append(
-                    ProviderWithStatus(
-                        **provider.model_dump(),
-                        status=loaded_provider.status,
-                        last_error=loaded_provider.last_error,
-                        missing_configuration=[var for var in loaded_provider.missing_configuration if var.required],
-                    )
+
+        async with self._uow() as uow:
+            env = await uow.env.get_all()
+
+        provider_states = await self._deployment_manager.state(provider_ids=[provider.id for provider in providers])
+
+        for provider, state in zip(providers, provider_states):
+            result_providers.append(
+                ProviderWithState(
+                    **provider.model_dump(),
+                    state=state,
+                    missing_configuration=[var for var in provider.check_env(env, raise_error=False) if var.required],
                 )
-            else:
-                result_providers.append(
-                    ProviderWithStatus(
-                        **provider.model_dump(),
-                        status=ProviderDeploymentStatus.missing,
-                        missing_configuration=[
-                            var for var in provider.check_env(env, raise_error=False) if var.required
-                        ],
-                        last_error=ProviderErrorMessage(message="Provider not yet initialized"),
-                    )
-                )
+            )
         return result_providers
 
-    async def delete_provider(self, *, id: ID, force: bool = False):
-        provider = await self.get_provider(id=id)
-        provider = self._loaded_provider_container.loaded_providers[provider.id]
+    async def delete_provider(self, *, provider_id: UUID):
+        async with self._uow() as uow:
+            await uow.providers.delete(provider_id=provider_id)
+            await self._deployment_manager.delete(provider_id=provider_id)
 
-        # Providers from the registry cannot be removed if not forced
-        if getattr(provider.provider, "registry", None) is None or force:
-            with suppress(ValueError):  # unpersisted providers are not found in repository
-                await self._repository.delete(provider_id=id)
-            await self._loaded_provider_container.remove(provider)
+    async def list_providers(self) -> list[ProviderWithState]:
+        async with self._uow() as uow:
+            return await self._get_providers_with_state(providers=[p async for p in uow.providers.list()])
 
-    async def _get_all_providers(self) -> list[BaseProvider]:
-        persisted_providers = {provider.id: provider for provider in await self._repository.list()}
-        loaded_providers = {p_id: p.provider for p_id, p in self._loaded_provider_container.loaded_providers.items()}
-        return list((persisted_providers | loaded_providers).values())
-
-    async def list_providers(self) -> list[ProviderWithStatus]:
-        return self._get_providers_with_status(
-            providers=await self._get_all_providers(),
-            env=await self._env_repository.get_all(),
-        )
-
-    async def get_provider(self, id: ID) -> ProviderWithStatus:
-        providers = [provider for provider in await self.list_providers() if provider.id == id]
+    async def get_provider(self, provider_id: UUID) -> ProviderWithState:
+        providers = [provider for provider in await self.list_providers() if provider.id == provider_id]
         if not providers:
-            raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Provider with ID: {str(id)} not found")
+            raise HTTPException(
+                status_code=HTTP_404_NOT_FOUND, detail=f"Provider with ID: {str(provider_id)} not found"
+            )
         return providers[0]
 
-    async def list_agents(self) -> list[Agent]:
-        return [
-            agent for provider in self._loaded_provider_container.loaded_providers.values() for agent in provider.agents
-        ]
+    async def stream_logs(self, provider_id: UUID) -> Callable[..., AsyncIterator[str]]:
+        logs_container = LogsContainer()
 
-    async def stream_logs(self, id: ID) -> Callable[..., AsyncIterator[str]]:
-        if not (provider := self._loaded_provider_container.loaded_providers.get(id, None)):
-            raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Provider not found")
+        logs_task = asyncio.create_task(
+            self._deployment_manager.stream_logs(provider_id=provider_id, logs_container=logs_container)
+        )
 
         async def logs_iterator() -> AsyncIterator[str]:
-            async with provider.logs_container.stream() as stream:
+            async with logs_container.stream() as stream:
                 async for message in stream:
                     yield json.dumps(message.model_dump(mode="json"))
 
         return logs_iterator
-
-    async def get_provider_by_agent_name(self, *, agent_name: str) -> LoadedProvider:
-        try:
-            return self._loaded_provider_container.get_provider_by_agent(agent_name=agent_name)
-        except ValueError as ex:
-            raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Agent {agent_name} not found") from ex
-
-    async def get_provider_by_run_id(self, *, run_id: str) -> LoadedProvider:
-        try:
-            return self._loaded_provider_container.get_provider_by_run(run_id=run_id)
-        except ValueError as ex:
-            raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Run {run_id} not found") from ex

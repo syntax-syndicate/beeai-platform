@@ -16,24 +16,19 @@ import asyncio
 import concurrent.futures
 import logging
 import shutil
-from contextlib import AsyncExitStack
 
 import anyio
 import anyio.to_thread
-from beeai_server.adapters.filesystem import (
-    FilesystemEnvVariableRepository,
-    FilesystemProviderRepository,
-    FilesystemTelemetryRepository,
-)
-from beeai_server.adapters.interface import (
-    IEnvVariableRepository,
-    IProviderRepository,
-    ITelemetryRepository,
-)
+import kr8s
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
+
+from beeai_server.adapters.interface import IProviderDeploymentManager
 from beeai_server.configuration import Configuration, get_configuration
 from beeai_server.domain.collector.constants import TELEMETRY_BASE_CONFIG_PATH, TELEMETRY_BEEAI_CONFIG_PATH
-from beeai_server.domain.provider.container import ProviderContainer
-from beeai_server.domain.telemetry import TelemetryCollectorManager
+from beeai_server.infrastructure.kubernetes.provider_deployment_manager import KubernetesProviderDeploymentManager
+
+from beeai_server.infrastructure.persistence.unit_of_work import SqlAlchemyUnitOfWorkFactory
+from beeai_server.services.unit_of_work import IUnitOfWorkFactory
 from beeai_server.utils.periodic import register_all_crons
 from kink import di
 
@@ -44,6 +39,18 @@ def copy_telemetry_config(config: Configuration):
     config.telemetry_config_dir.mkdir(parents=True, exist_ok=True)
     shutil.copy(TELEMETRY_BASE_CONFIG_PATH, config.telemetry_config_dir / "base.yaml")
     shutil.copy(TELEMETRY_BEEAI_CONFIG_PATH, config.telemetry_config_dir / "beeai.yaml")
+
+
+def setup_database_engine(config: Configuration) -> AsyncEngine:
+    return create_async_engine(
+        str(config.persistence.db_url.get_secret_value()),
+        isolation_level="SERIALIZABLE",
+        echo=True,
+    )
+
+
+def setup_kubernetes_client():
+    kr8s.asyncio.api()
 
 
 async def bootstrap_dependencies():
@@ -60,13 +67,8 @@ async def bootstrap_dependencies():
 
     copy_telemetry_config(config)
 
-    di[IProviderRepository] = FilesystemProviderRepository(provider_config_path=config.provider_config_path)
-    di[IEnvVariableRepository] = FilesystemEnvVariableRepository(env_variable_path=config.env_path)
-    di[ITelemetryRepository] = FilesystemTelemetryRepository(
-        telemetry_config_path=config.telemetry_config_dir / "telemetry.yaml"
-    )
-    di[TelemetryCollectorManager] = AsyncExitStack() if not config.collector_managed else TelemetryCollectorManager()
-    di[ProviderContainer] = ProviderContainer(env_repository=di[IEnvVariableRepository])
+    di[IProviderDeploymentManager] = KubernetesProviderDeploymentManager()
+    di[IUnitOfWorkFactory] = SqlAlchemyUnitOfWorkFactory(setup_database_engine(config))
 
     # Ensure cache directory
     await anyio.Path(config.cache_dir).mkdir(parents=True, exist_ok=True)

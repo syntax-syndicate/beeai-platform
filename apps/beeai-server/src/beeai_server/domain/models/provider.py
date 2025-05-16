@@ -23,7 +23,6 @@ from uuid import UUID
 
 import yaml
 
-from beeai_server.adapters.interface import IContainerBackend
 from beeai_server.domain.constants import DOCKER_MANIFEST_LABEL_NAME
 from beeai_server.domain.models.agent import EnvVar, Agent
 from beeai_server.domain.models.registry import RegistryLocation
@@ -36,57 +35,62 @@ from pydantic import BaseModel, Field, computed_field, RootModel, HttpUrl
 logger = logging.getLogger(__name__)
 
 
-class ProviderManifest(BaseModel, extra="allow"):
-    agents: list[Agent]
-
-
-class DockerImageProviderSource(RootModel):
+class DockerImageProviderLocation(RootModel):
     root: DockerImageID
 
+    @property
+    def provider_id(self) -> UUID:
+        location_digest = hashlib.sha256(str(self.root).encode()).digest()
+        return UUID(bytes=location_digest[:16])
+
     @inject
-    async def load_agents(self) -> list[Agent]:
+    async def load_agents(self, provider_id: UUID) -> list[Agent]:
         from acp_sdk import AgentsListResponse
 
         _, labels = await get_registry_image_config_and_labels(self.root)
         if DOCKER_MANIFEST_LABEL_NAME not in labels:
             raise ValueError(f"Docker image labels must contain 'beeai.dev.agent.yaml': {self.location}")
-        return AgentsListResponse.model_validate(
+        agents = AgentsListResponse.model_validate(
             yaml.safe_load(base64.b64decode(labels[DOCKER_MANIFEST_LABEL_NAME]))
         ).agents
+        return [Agent.model_validate({**agent.model_dump(), "provider_id": provider_id}) for agent in agents]
 
 
-class NetworkProviderSource(RootModel):
+class NetworkProviderLocation(RootModel):
     root: HttpUrl
 
-    @inject
-    async def load_agents(self, container_backend: IContainerBackend) -> list[Agent]:
+    @property
+    def provider_id(self) -> UUID:
+        location_digest = hashlib.sha256(str(self.root).encode()).digest()
+        return UUID(bytes=location_digest[:16])
+
+    async def load_agents(self, provider_id: UUID) -> list[Agent]:
         from acp_sdk import AgentsListResponse
 
         async with AsyncClient() as client:
             response = await client.get(f"{str(self.root).rstrip('/')}/agents", timeout=1)
-            return AgentsListResponse.model_validate(response.json()).agents
+            agents = AgentsListResponse.model_validate(response.json()).agents
+            return [Agent.model_validate({**agent.model_dump(), "provider_id": provider_id}) for agent in agents]
+
+
+ProviderLocation = DockerImageProviderLocation | NetworkProviderLocation
 
 
 class Provider(BaseModel):
-    manifest: ProviderManifest
-    auto_stop_timeout: timedelta | None = Field(timedelta(minutes=5), exclude=True)
-    source: DockerImageProviderSource | NetworkProviderSource
+    auto_stop_timeout: timedelta = Field(default=timedelta(minutes=5))
+    source: ProviderLocation
     registry: RegistryLocation | None = None
+    env: list[EnvVar]
 
     @computed_field()
     @cached_property
     def managed(self) -> bool:
-        return isinstance(self.source, DockerImageProviderSource)
+        return isinstance(self.source, DockerImageProviderLocation)
 
     @computed_field
     @property
     def id(self) -> UUID:
-        location_digest = hashlib.sha256(str(self.source).encode()).digest()
-        return UUID(bytes=location_digest[:16])
-
-    @cached_property
-    def env(self):
-        return [EnvVar.model_validate(env) for agent in self.manifest.agents for env in agent.metadata.env]
+        return self.source.provider_id
 
     def check_env(self, env: dict[str, str] | None = None, raise_error: bool = True) -> list[EnvVar]:
         required_env = {var.name for var in self.env if var.required}
@@ -136,7 +140,7 @@ class Provider(BaseModel):
 #         port = str(await find_free_port())
 
 
-class ProviderDeploymentStatus(StrEnum):
+class ProviderDeploymentState(StrEnum):
     missing = "missing"
     starting = "starting"
     ready = "ready"
@@ -146,3 +150,9 @@ class ProviderDeploymentStatus(StrEnum):
 
 class ProviderErrorMessage(BaseModel):
     message: str
+
+
+class ProviderWithState(Provider, extra="allow"):
+    state: ProviderDeploymentState
+    last_error: ProviderErrorMessage | None = None
+    missing_configuration: list[EnvVar] = Field(default_factory=list)

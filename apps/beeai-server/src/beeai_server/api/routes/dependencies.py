@@ -15,6 +15,7 @@
 from typing import Annotated
 
 from beeai_server.configuration import Configuration
+from beeai_server.services.acp import AcpProxyService
 from beeai_server.services.env import EnvService
 from beeai_server.services.provider import ProviderService
 from beeai_server.services.telemetry import TelemetryService
@@ -23,5 +24,6 @@ from kink import di
 
 ConfigurationDependency = Annotated[Configuration, Depends(lambda: di[Configuration])]
 ProviderServiceDependency = Annotated[ProviderService, Depends(lambda: di[ProviderService])]
+AcpProxyServiceDependency = Annotated[AcpProxyService, Depends(lambda: di[AcpProxyService])]
 EnvServiceDependency = Annotated[EnvService, Depends(lambda: di[EnvService])]
 TelemetryServiceDependency = Annotated[TelemetryService, Depends(lambda: di[TelemetryService])]

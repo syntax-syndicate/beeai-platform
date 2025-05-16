@@ -12,15 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
 import logging
 from asyncio import Task
 from datetime import timedelta
-from functools import partial
 
 
 from beeai_server.configuration import Configuration
-from beeai_server.domain.models.provider import ProviderStatus
+from beeai_server.domain.models.provider import Provider
 from beeai_server.services.provider import ProviderService
 from beeai_server.utils.periodic import periodic
 from kink import inject, di
@@ -45,8 +43,8 @@ async def check_registry(configuration: Configuration, provider_service: Provide
 
     for provider_location in provider_locations:
         try:
-            provider_id = await provider_location.get_source()
-            desired_providers[provider_id.id] = provider_location
+            provider_id = Provider(source=provider_location, registry=registry, env=[]).id
+            desired_providers[provider_id] = provider_location
         except ValueError as e:
             errors.append(e)
 
@@ -55,7 +53,7 @@ async def check_registry(configuration: Configuration, provider_service: Provide
     for provider_id in new_providers:
         provider_location = desired_providers[provider_id]
         try:
-            await provider_service.register_provider(location=provider_location, registry=registry)
+            await provider_service.create_provider(location=provider_location, registry=registry)
             logger.info(f"Added provider {provider_location}")
         except Exception as ex:
             errors.append(RuntimeError(f"[{provider_location}]: Failed to add provider: {ex}"))
@@ -63,26 +61,10 @@ async def check_registry(configuration: Configuration, provider_service: Provide
     for provider_id in old_providers:
         provider = managed_providers[provider_id]
         try:
-            await provider_service.delete_provider(id=provider.id, force=True)
-            logger.info(f"Removed provider {provider.location}")
+            await provider_service.delete_provider(provider_id=provider.id)
+            logger.info(f"Removed provider {provider.source}")
         except Exception as ex:
-            errors.append(RuntimeError(f"[{provider.location}]: Failed to remove provider: {ex}"))
+            errors.append(RuntimeError(f"[{provider.source}]: Failed to remove provider: {ex}"))
 
-    if configuration.agent_registry.preinstall:
-        managed_providers = {
-            provider.id
-            for provider in await provider_service.list_providers()
-            if provider.registry and provider.status != ProviderStatus.not_loaded
-        }
-        for provider_id in managed_providers:
-            try:
-                if provider_id in preinstall_background_tasks:
-                    continue
-                install = await provider_service.install_provider(id=provider_id)
-                task = asyncio.create_task(install())
-                preinstall_background_tasks[provider_id] = task
-                task.add_done_callback(partial(preinstall_background_tasks.pop, provider_id))
-            except Exception as ex:
-                errors.append(ex)
     if errors:
         raise ExceptionGroup("Exceptions occurred when reloading providers", errors)

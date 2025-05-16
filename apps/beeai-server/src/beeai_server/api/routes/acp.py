@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from contextlib import AsyncExitStack, AbstractAsyncContextManager
+from contextlib import AsyncExitStack
 from typing import Any
 
 import fastapi
@@ -30,25 +30,23 @@ from acp_sdk.models import (
 )
 
 from beeai_server.api.schema.acp import AgentsListResponse, AgentReadResponse
-from beeai_server.api.routes.dependencies import ProviderServiceDependency
+from beeai_server.api.routes.dependencies import AcpProxyServiceDependency
 
 router = fastapi.APIRouter()
 
 
 @router.get("/agents")
-async def list_agents(provider_service: ProviderServiceDependency) -> AgentsListResponse:
-    agents = await provider_service.list_agents()
-    return AgentsListResponse(agents=agents)
+async def list_agents(acp_service: AcpProxyServiceDependency) -> AgentsListResponse:
+    return AgentsListResponse(agents=await acp_service.list_agents())
 
 
 @router.get("/agents/{name}")
-async def read_agent(name: AgentName, provider_service: ProviderServiceDependency) -> AgentReadResponse:
-    provider = await provider_service.get_provider_by_agent_name(agent_name=name)
-    return [agent for agent in provider.agents if agent.name == name][0]
+async def read_agent(name: AgentName, acp_service: AcpProxyServiceDependency) -> AgentReadResponse:
+    return AgentReadResponse.model_validate(await acp_service.get_agent_by_name(name))
 
 
 async def send_request(
-    client_factory: AbstractAsyncContextManager[httpx.AsyncClient],
+    client: httpx.AsyncClient,
     method: str,
     url: str,
     json: dict[str, Any] | None = None,
@@ -56,7 +54,7 @@ async def send_request(
     exit_stack = AsyncExitStack()
 
     try:
-        client = await exit_stack.enter_async_context(client_factory)
+        client = await exit_stack.enter_async_context(client)
         response: httpx.Response = await exit_stack.enter_async_context(client.stream(method, url, json=json))
 
         async def stream_fn():
@@ -90,26 +88,26 @@ async def send_request(
 
 
 @router.post("/runs")
-async def create_run(request: RunCreateRequest, provider_service: ProviderServiceDependency) -> RunCreateResponse:
-    provider = await provider_service.get_provider_by_agent_name(agent_name=request.agent_name)
-    return await send_request(provider.client(), "POST", "/runs", request.model_dump(mode="json"))
+async def create_run(request: RunCreateRequest, acp_service: AcpProxyServiceDependency) -> RunCreateResponse:
+    client = await acp_service.get_proxy_client(agent_name=request.agent_name)
+    return await send_request(client, "POST", "/runs", request.model_dump(mode="json"))
 
 
 @router.get("/runs/{run_id}")
-async def read_run(run_id: RunId, provider_service: ProviderServiceDependency) -> RunReadResponse:
-    provider = await provider_service.get_provider_by_run_id(run_id=str(run_id))
-    return await send_request(provider.client(), "GET", f"/runs/{run_id}")
+async def read_run(run_id: RunId, acp_service: AcpProxyServiceDependency) -> RunReadResponse:
+    client = await acp_service.get_proxy_client(run_id=run_id)
+    return await send_request(client, "GET", f"/runs/{run_id}")
 
 
 @router.post("/runs/{run_id}")
 async def resume_run(
-    run_id: RunId, request: RunResumeRequest, provider_service: ProviderServiceDependency
+    run_id: RunId, request: RunResumeRequest, acp_service: AcpProxyServiceDependency
 ) -> RunResumeResponse:
-    provider = await provider_service.get_provider_by_run_id(run_id=str(run_id))
-    return await send_request(provider.client(), "POST", f"/runs/{run_id}", request.model_dump(mode="json"))
+    client = await acp_service.get_proxy_client(run_id=run_id)
+    return await send_request(client, "POST", f"/runs/{run_id}", request.model_dump(mode="json"))
 
 
 @router.post("/runs/{run_id}/cancel")
-async def cancel_run(run_id: RunId, provider_service: ProviderServiceDependency) -> RunCancelResponse:
-    provider = await provider_service.get_provider_by_run_id(run_id=str(run_id))
-    return await send_request(provider.client(), "POST", f"/runs/{run_id}/cancel")
+async def cancel_run(run_id: RunId, acp_service: AcpProxyServiceDependency) -> RunCancelResponse:
+    client = await acp_service.get_proxy_client(run_id=run_id)
+    return await send_request(client, "POST", f"/runs/{run_id}/cancel")

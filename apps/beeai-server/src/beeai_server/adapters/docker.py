@@ -16,7 +16,7 @@ import asyncio
 import base64
 import logging
 import re
-import uuid
+from uuid import UUID, uuid4
 from contextlib import asynccontextmanager, suppress, AsyncExitStack
 from datetime import timedelta
 from typing import Iterable, AsyncGenerator, AsyncIterator
@@ -32,7 +32,6 @@ from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_attempt,
 
 from beeai_server.adapters.interface import IContainerBackend
 from beeai_server.configuration import Configuration, OCIRegistryConfiguration
-from beeai_server.custom_types import ID
 from beeai_server.domain.constants import DOCKER_MANIFEST_LABEL_NAME
 from beeai_server.exceptions import retry_if_exception_grp_type
 from beeai_server.utils.docker import DockerImageID, replace_localhost_url
@@ -77,7 +76,7 @@ class DockerContainerBackend(IContainerBackend):
             else f"{github_url.org}/{github_url.repo}/{github_url.path}:{github_url.version}"
         )
         remote = f"https://github.com/{github_url.org}/{github_url.repo}.git#{github_url.version}{path}"
-        tmp_image = uuid.uuid4().hex
+        tmp_image = uuid4().hex
         async with self._docker as docker:
             logs_container.add_stdout("ℹ️ Building image")
             async for message in docker.images.build(remote=remote, tag=tmp_image, stream=True):
@@ -170,7 +169,7 @@ class DockerContainerBackend(IContainerBackend):
             session=aiohttp.ClientSession(connector=docker.connector, timeout=aiohttp.ClientTimeout(sock_connect=30)),
         )
 
-    async def stream_logs(self, container_id: ID, logs_container: LogsContainer):
+    async def stream_logs(self, container_id: UUID, logs_container: LogsContainer):
         async for attempt in AsyncRetrying(retry=retry_if_exception_type(AioHTTPError), reraise=True):
             with attempt:
                 async with self._docker as docker:
@@ -191,7 +190,7 @@ class DockerContainerBackend(IContainerBackend):
         port_mappings: dict[str, str] | None = None,
         logs_container: LogsContainer | None = None,
         restart: str | None = None,
-    ) -> AsyncGenerator[ID, None]:
+    ) -> AsyncGenerator[UUID, None]:
         # Dirty networking fix
         env = env or {}
         env = {key: replace_localhost_url(val) for key, val in env.items()}

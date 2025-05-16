@@ -14,7 +14,6 @@
 
 from kink import inject
 
-from beeai_server.adapters.interface import ITelemetryRepository
 from beeai_server.configuration import Configuration
 
 
@@ -22,19 +21,21 @@ from beeai_server.configuration import Configuration
 class TelemetryService:
     def __init__(
         self,
-        collector_repository: ITelemetryRepository,
+        # collector_repository: ITelemetryRepository,
         # collector_manager: TelemetryCollectorManager,
         config: Configuration,
     ):
-        self._repository = collector_repository
+        # self._repository = collector_repository
         # self._manager = collector_manager
         self._config = config
 
     async def read_config(self):
-        config = await self._repository.get()
-        return config
+        raise NotImplementedError
+        # config = await self._repository.get()
+        # return config
 
     async def update_config(self, *, sharing_enabled: bool):
-        config = await self._repository.get()
-        await self._repository.set(config=config.model_copy(update={"sharing_enabled": sharing_enabled}))
+        raise NotImplementedError
+        # config = await self._repository.get()
+        # await self._repository.set(config=config.model_copy(update={"sharing_enabled": sharing_enabled}))
         # await self._manager.reload()

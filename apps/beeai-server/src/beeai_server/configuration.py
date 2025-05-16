@@ -21,7 +21,7 @@ from pathlib import Path
 
 from beeai_server.domain.models.registry import GithubRegistryLocation, RegistryLocation
 from beeai_server.utils.github import GithubUrl
-from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator, HttpUrl
+from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator, HttpUrl, AnyUrl, Secret
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -62,8 +62,12 @@ class AgentRegistryConfiguration(BaseModel):
     location: RegistryLocation = GithubRegistryLocation(
         root=GithubUrl(root="https://github.com/i-am-bee/beeai-platform@release-v0.1.3#path=agent-registry.yaml")
     )
-    preinstall: bool = False
     sync_period_sec: int = Field(default=timedelta(minutes=10).total_seconds())
+
+
+class PersistenceConfiguration(BaseSettings):
+    db_url: Secret[AnyUrl] = Secret(AnyUrl("postgresql+asyncpg://postgres:postgres@db-postgresql:5432/beeai"))
+    encryption_key: Secret[str] | None = None
 
 
 class Configuration(BaseSettings):
@@ -74,6 +78,7 @@ class Configuration(BaseSettings):
     logging: LoggingConfiguration = LoggingConfiguration()
     agent_registry: AgentRegistryConfiguration = AgentRegistryConfiguration()
     oci_registry: dict[str, OCIRegistryConfiguration] = Field(default_factory=dict)
+    persistence: PersistenceConfiguration = PersistenceConfiguration()
 
     provider_config_path: Path = Path.home() / ".beeai" / "providers.yaml"
     telemetry_config_dir: Path = Path.home() / ".beeai" / "telemetry"
@@ -83,11 +88,6 @@ class Configuration(BaseSettings):
     port: int = 8333
     collector_host: HttpUrl | None = "http://localhost:8335/"
     collector_managed: bool = True
-
-    disable_docker: bool = False
-    docker_host: str | None = None
-    force_lima: bool = False
-    autostart_providers: bool = False
 
     @model_validator(mode="after")
     def _oci_registry_defaultdict(self):

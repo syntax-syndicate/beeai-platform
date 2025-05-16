@@ -15,12 +15,10 @@
 import logging
 from datetime import timedelta
 
-import anyio
 from beeai_server.configuration import Configuration
-from beeai_server.domain.models.provider import UnmanagedProvider, ProviderStatus
-from beeai_server.domain.provider.container import ProviderContainer, LoadedProvider
+
+from beeai_server.services.unit_of_work import IUnitOfWorkFactory
 from beeai_server.utils.periodic import periodic
-from beeai_server.utils.utils import extract_messages
 from kink import inject
 
 logger = logging.getLogger(__name__)
@@ -28,27 +26,26 @@ logger = logging.getLogger(__name__)
 
 @periodic(period=timedelta(seconds=5))
 @inject
-async def remove_broken_unmanaged_providers(configuration: Configuration, provider_container: ProviderContainer):
-    unmanaged_providers: list[LoadedProvider] = [
-        loaded_provider
-        for loaded_provider in provider_container.loaded_providers.values()
-        if isinstance(loaded_provider.provider, UnmanagedProvider)
-    ]
-    for loaded_provider in unmanaged_providers:
-        if loaded_provider.status in {
-            ProviderStatus.ready,
-            ProviderStatus.error,
-            ProviderStatus.running,
-            LoadedProvider.last_error,
-        }:
-            try:
-                with anyio.fail_after(delay=timedelta(seconds=30).total_seconds()):
-                    async with loaded_provider.client() as client:
-                        await client.get("agents")
-            except Exception as ex:
-                logger.error(
-                    f"Provider {loaded_provider.id} failed to respond to ping in 30 seconds: {extract_messages(ex)}"
-                )
-                loaded_provider.status = ProviderStatus.error
-                if not loaded_provider.provider.persistent:
-                    await provider_container.remove(loaded_provider.provider)
+async def remove_broken_unmanaged_providers(configuration: Configuration, uow: IUnitOfWorkFactory):
+    return
+    # async with uow() as uow:
+    # unmanaged_providers = [provider async for provider in await uow.providers.list() if not provider.managed]
+    #
+    # for loaded_provider in unmanaged_providers:
+    #     if loaded_provider.state in {
+    #         ProviderStatus.ready,
+    #         ProviderStatus.error,
+    #         ProviderStatus.running,
+    #         LoadedProvider.last_error,
+    #     }:
+    #         try:
+    #             with anyio.fail_after(delay=timedelta(seconds=30).total_seconds()):
+    #                 async with loaded_provider.client() as client:
+    #                     await client.get("agents")
+    #         except Exception as ex:
+    #             logger.error(
+    #                 f"Provider {loaded_provider.id} failed to respond to ping in 30 seconds: {extract_messages(ex)}"
+    #             )
+    #             loaded_provider.state = ProviderStatus.error
+    #             if not loaded_provider.provider.persistent:
+    #                 await provider_container.remove(loaded_provider.provider)

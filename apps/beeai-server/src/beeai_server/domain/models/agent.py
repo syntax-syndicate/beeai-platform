@@ -18,6 +18,7 @@ class AcpMetadata(AcpMetadataOriginal):
 
 
 class Agent(AcpAgentOriginal, extra="allow"):
+    id: UUID = Field(default_factory=uuid4)
     metadata: AcpMetadata = AcpMetadata()
     provider_id: UUID
 
