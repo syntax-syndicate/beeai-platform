@@ -14,17 +14,41 @@
  * limitations under the License.
  */
 
-.button {
-  all: unset;
+.root {
   display: flex;
-  justify-content: center;
-  border-radius: 50%;
-  background: $white;
-  cursor: pointer;
+  gap: $spacing-05;
+  display: flex;
+  align-items: center;
 
-  > svg {
-    fill: $black;
-    inline-size: var(--play-button-size);
-    block-size: var(--play-button-size);
+  hr {
+    block-size: 1rem;
+    inline-size: 0;
+    border: none;
+    border-inline-start: 1px solid $border-subtle;
+  }
+}
+
+.nav {
+  display: flex;
+  gap: $spacing-05;
+
+  &.navSocial {
+    gap: $spacing-04;
+  }
+}
+
+.item {
+  flex-shrink: 0;
+}
+
+.link {
+  @include link-mask(-$spacing-02);
+  display: flex;
+  color: inherit;
+  position: relative;
+  text-decoration: none;
+  font-size: rem(12px);
+  &:hover {
+    color: $background-inverse;
   }
 }
