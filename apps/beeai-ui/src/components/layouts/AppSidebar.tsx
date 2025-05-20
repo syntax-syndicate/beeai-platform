@@ -14,25 +14,16 @@
  * limitations under the License.
  */
 
-.root {
-  display: grid;
-  block-size: 100dvh;
-  grid-template-rows: auto 1fr;
-  grid-template-areas:
-    'header'
-    'main';
-}
+import { AgentsNav } from '#components/AgentsNav/AgentsNav.tsx';
+import { SidePanel } from '#components/SidePanel/SidePanel.tsx';
+import { useApp } from '#contexts/App/index.ts';
 
-.header {
-  grid-area: header;
-}
+export function AppSidebar() {
+  const { navigationOpen, navigationPanelRef } = useApp();
 
-.main {
-  grid-area: main;
-  display: grid;
-  grid-template-columns: 1fr max-content;
-  align-items: stretch;
-  grid-template-rows: 1fr;
-  overflow: hidden;
-  view-transition-name: main;
+  return (
+    <SidePanel variant="left" isOpen={navigationOpen} ref={navigationPanelRef}>
+      <AgentsNav />
+    </SidePanel>
+  );
 }

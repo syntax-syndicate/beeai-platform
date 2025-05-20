@@ -14,22 +14,16 @@
  * limitations under the License.
  */
 
-import clsx from 'clsx';
-import type { PropsWithChildren } from 'react';
+.root {
+  &:global(.cds--btn) {
+    font-weight: 600;
+    column-gap: $spacing-03;
+    padding-inline: $spacing-03 - rem(1px);
+    margin-inline-start: -$spacing-03;
+  }
 
-import classes from './AppHeader.module.scss';
-import { Container } from './Container';
-
-interface Props {
-  className?: string;
-}
-
-export function AppHeader({ className, children }: PropsWithChildren<Props>) {
-  return (
-    <header className={clsx(classes.root, className)}>
-      <Container size="max">
-        <div className={classes.holder}>{children}</div>
-      </Container>
-    </header>
-  );
+  :global(.cds--btn__icon) {
+    margin: 0;
+    order: -1;
+  }
 }

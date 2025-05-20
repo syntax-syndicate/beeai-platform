@@ -15,24 +15,34 @@
  */
 
 .root {
-  display: grid;
-  block-size: 100dvh;
-  grid-template-rows: auto 1fr;
-  grid-template-areas:
-    'header'
-    'main';
+  display: flex;
+  flex-direction: column;
+  row-gap: $spacing-04;
 }
 
-.header {
-  grid-area: header;
+.heading {
+  font-size: rem(14px);
+  line-height: math.div(18, 14);
+  font-weight: 600;
+  letter-spacing: $letter-spacing;
+  padding-inline: $spacing-03;
 }
 
-.main {
-  grid-area: main;
-  display: grid;
-  grid-template-columns: 1fr max-content;
-  align-items: stretch;
-  grid-template-rows: 1fr;
-  overflow: hidden;
-  view-transition-name: main;
+.list {
+  display: flex;
+  flex-direction: column;
+  row-gap: $spacing-02;
+}
+
+.button {
+  inline-size: 100%;
+  padding: $spacing-03 - rem(1px);
+  &:global(.cds--skeleton) {
+    inline-size: 100%;
+    min-block-size: rem(34px);
+  }
+
+  &.isActive {
+    background-color: $layer-02;
+  }
 }

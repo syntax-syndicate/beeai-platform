@@ -14,25 +14,16 @@
  * limitations under the License.
  */
 
-.root {
-  display: grid;
-  block-size: 100dvh;
-  grid-template-rows: auto 1fr;
-  grid-template-areas:
-    'header'
-    'main';
-}
+import { use } from 'react';
 
-.header {
-  grid-area: header;
-}
+import { AppContext } from './app-context';
 
-.main {
-  grid-area: main;
-  display: grid;
-  grid-template-columns: 1fr max-content;
-  align-items: stretch;
-  grid-template-rows: 1fr;
-  overflow: hidden;
-  view-transition-name: main;
+export function useApp() {
+  const context = use(AppContext);
+
+  if (!context) {
+    throw new Error('useApp must be used within a AppProvider');
+  }
+
+  return context;
 }

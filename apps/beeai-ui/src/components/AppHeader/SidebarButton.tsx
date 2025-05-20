@@ -14,25 +14,26 @@
  * limitations under the License.
  */
 
-.root {
-  display: grid;
-  block-size: 100dvh;
-  grid-template-rows: auto 1fr;
-  grid-template-areas:
-    'header'
-    'main';
-}
+import { Menu } from '@carbon/icons-react';
+import { Button } from '@carbon/react';
 
-.header {
-  grid-area: header;
-}
+import { useApp } from '#contexts/App/index.ts';
 
-.main {
-  grid-area: main;
-  display: grid;
-  grid-template-columns: 1fr max-content;
-  align-items: stretch;
-  grid-template-rows: 1fr;
-  overflow: hidden;
-  view-transition-name: main;
+import classes from './SidebarButton.module.scss';
+
+export function SidebarButton() {
+  const { setNavigationOpen, navigationToggleRef } = useApp();
+
+  return (
+    <Button
+      kind="ghost"
+      size="sm"
+      ref={navigationToggleRef}
+      renderIcon={Menu}
+      className={classes.root}
+      onClick={() => setNavigationOpen?.((value) => !value)}
+    >
+      BeeAI
+    </Button>
+  );
 }

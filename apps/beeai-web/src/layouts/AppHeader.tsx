@@ -14,25 +14,22 @@
  * limitations under the License.
  */
 
-.root {
-  display: grid;
-  block-size: 100dvh;
-  grid-template-rows: auto 1fr;
-  grid-template-areas:
-    'header'
-    'main';
+import { Container } from '@i-am-bee/beeai-ui';
+import clsx from 'clsx';
+import type { PropsWithChildren } from 'react';
+
+import classes from './AppHeader.module.scss';
+
+interface Props {
+  className?: string;
 }
 
-.header {
-  grid-area: header;
-}
-
-.main {
-  grid-area: main;
-  display: grid;
-  grid-template-columns: 1fr max-content;
-  align-items: stretch;
-  grid-template-rows: 1fr;
-  overflow: hidden;
-  view-transition-name: main;
+export function AppHeader({ className, children }: PropsWithChildren<Props>) {
+  return (
+    <header className={clsx(classes.root, className)}>
+      <Container size="max">
+        <div className={classes.holder}>{children}</div>
+      </Container>
+    </header>
+  );
 }

@@ -14,25 +14,16 @@
  * limitations under the License.
  */
 
-.root {
-  display: grid;
-  block-size: 100dvh;
-  grid-template-rows: auto 1fr;
-  grid-template-areas:
-    'header'
-    'main';
-}
+import { createContext, type Dispatch, type RefObject, type SetStateAction } from 'react';
 
-.header {
-  grid-area: header;
-}
+export const AppContext = createContext<AppContextValue>({});
 
-.main {
-  grid-area: main;
-  display: grid;
-  grid-template-columns: 1fr max-content;
-  align-items: stretch;
-  grid-template-rows: 1fr;
-  overflow: hidden;
-  view-transition-name: main;
+interface AppContextValue {
+  navigationOpen?: boolean;
+  agentDetailOpen?: boolean;
+  navigationToggleRef?: RefObject<HTMLButtonElement | null>;
+  navigationPanelRef?: RefObject<HTMLElement | null>;
+  setNavigationOpen?: Dispatch<SetStateAction<boolean>>;
+  setAgentDetailOpen?: Dispatch<SetStateAction<boolean>>;
+  setCloseNavOnClickOutside?: Dispatch<SetStateAction<boolean>>;
 }

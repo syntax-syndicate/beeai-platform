@@ -14,25 +14,8 @@
  * limitations under the License.
  */
 
-.root {
-  display: grid;
-  block-size: 100dvh;
-  grid-template-rows: auto 1fr;
-  grid-template-areas:
-    'header'
-    'main';
-}
+import type { AgentName } from './api/types';
 
-.header {
-  grid-area: header;
-}
-
-.main {
-  grid-area: main;
-  display: grid;
-  grid-template-columns: 1fr max-content;
-  align-items: stretch;
-  grid-template-rows: 1fr;
-  overflow: hidden;
-  view-transition-name: main;
-}
+export type AgentPageParams = {
+  agentName: AgentName;
+};

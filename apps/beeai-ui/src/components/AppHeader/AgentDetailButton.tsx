@@ -14,25 +14,25 @@
  * limitations under the License.
  */
 
-.root {
-  display: grid;
-  block-size: 100dvh;
-  grid-template-rows: auto 1fr;
-  grid-template-areas:
-    'header'
-    'main';
-}
+import { Information } from '@carbon/icons-react';
+import { IconButton } from '@carbon/react';
 
-.header {
-  grid-area: header;
-}
+import { useApp } from '#contexts/App/index.ts';
 
-.main {
-  grid-area: main;
-  display: grid;
-  grid-template-columns: 1fr max-content;
-  align-items: stretch;
-  grid-template-rows: 1fr;
-  overflow: hidden;
-  view-transition-name: main;
+import classes from './AgentDetailButton.module.scss';
+
+export function AgentDetailButton() {
+  const { setAgentDetailOpen } = useApp();
+
+  return (
+    <IconButton
+      kind="tertiary"
+      size="sm"
+      label="Agent Detail"
+      wrapperClasses={classes.root}
+      onClick={() => setAgentDetailOpen?.((value) => !value)}
+    >
+      <Information />
+    </IconButton>
+  );
 }
