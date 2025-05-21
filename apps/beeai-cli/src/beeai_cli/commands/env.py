@@ -108,9 +108,11 @@ async def setup() -> bool:
             ),
             Choice(
                 name="IBM watsonx".ljust(25) + "🚧 experimental",
-                value=("watsonx", None, "ibm/granite-3-8b-instruct"),
+                value=("watsonx", None, "ibm/granite-3-3-8b-instruct"),
             ),
-            Choice(name="Ollama".ljust(25) + "💻 local", value=("Ollama", "http://localhost:11434/v1", "llama3.1:8b")),
+            Choice(
+                name="Ollama".ljust(25) + "💻 local", value=("Ollama", "http://localhost:11434/v1", "granite3.3:8b")
+            ),
             Choice(name="Jan".ljust(25) + "💻 local", value=("Jan", "http://localhost:1337/v1", None)),
             Choice(name="Other (RITS, vLLM, ...)".ljust(25) + "🔧 provide API URL", value=("Other", None, None)),
         ],
