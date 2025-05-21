@@ -20,14 +20,12 @@ import { useParams } from 'react-router';
 
 import { MarkdownContent } from '#components/MarkdownContent/MarkdownContent.tsx';
 import { SidePanel } from '#components/SidePanel/SidePanel.tsx';
-import { TransitionLink } from '#components/TransitionLink/TransitionLink.tsx';
 import { useApp } from '#contexts/App/index.ts';
-import { routes } from '#utils/router.ts';
 
 import { useAgent } from '../api/queries/useAgent';
 import type { AgentPageParams } from '../types';
+import { getAvailableAgentLinkUrl } from '../utils';
 import classes from './AgentDetailPanel.module.scss';
-import { AgentMetadata } from './AgentMetadata';
 import { AgentTags } from './AgentTags';
 
 export function AgentDetailPanel() {
@@ -37,7 +35,9 @@ export function AgentDetailPanel() {
 
   if (!agent) return null;
 
-  const { name, description } = agent;
+  const { description, metadata } = agent;
+  const agentUrl = getAvailableAgentLinkUrl(metadata, ['homepage', 'documentation', 'source-code']);
+  const authorName = metadata.author?.name;
 
   return (
     <SidePanel variant="right" isOpen={agentDetailOpen}>
@@ -55,13 +55,15 @@ export function AgentDetailPanel() {
                 <>
                   {description && <MarkdownContent className={classes.description}>{description}</MarkdownContent>}
 
-                  <AgentMetadata agent={agent} />
+                  {authorName && <span>By {authorName}</span>}
 
                   <AgentTags agent={agent} />
 
-                  <TransitionLink href={routes.agentDetail({ name })} className={classes.detailLink}>
-                    View more <ArrowUpRight />
-                  </TransitionLink>
+                  {agentUrl && (
+                    <a href={agentUrl} rel="noreferrer" className={classes.docsLink}>
+                      View more <ArrowUpRight />
+                    </a>
+                  )}
                 </>
               ) : (
                 <>

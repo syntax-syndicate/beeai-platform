@@ -16,6 +16,7 @@
 
 import uniq from 'lodash/uniq';
 
+import type { components } from '#api/schema.js';
 import { SupportedUis } from '#modules/runs/constants.ts';
 import { compareStrings, isNotNull } from '#utils/helpers.ts';
 
@@ -52,4 +53,23 @@ export function isAgentUiSupported(agent: Agent) {
   const uiType = agent.metadata.ui?.type;
 
   return uiType && SupportedUis.includes(uiType);
+}
+
+type AgentLinkType = components['schemas']['LinkType'];
+
+export function getAvailableAgentLinkUrl<T extends AgentLinkType | AgentLinkType[]>(
+  metadata: components['schemas']['Metadata'],
+  type: T,
+): string | undefined {
+  const typesArray = Array.isArray(type) ? type : [type];
+
+  let url = undefined;
+  for (const type of typesArray) {
+    url = metadata.links?.find((link) => link.type === type)?.url;
+    if (url) {
+      break;
+    }
+  }
+
+  return url;
 }
