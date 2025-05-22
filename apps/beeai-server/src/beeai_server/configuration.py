@@ -60,7 +60,7 @@ class OCIRegistryConfiguration(BaseModel, extra="allow"):
 class AgentRegistryConfiguration(BaseModel):
     enabled: bool = True
     location: RegistryLocation = GithubRegistryLocation(
-        root=GithubUrl(root="https://github.com/i-am-bee/beeai-platform@release-v0.1.3#path=agent-registry.yaml")
+        root=GithubUrl(root="https://github.com/i-am-bee/beeai-platform@release-v0.1.4#path=agent-registry.yaml")
     )
     preinstall: bool = False
     sync_period_sec: int = Field(default=timedelta(minutes=10).total_seconds())
