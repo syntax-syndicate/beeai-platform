@@ -38,7 +38,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/build-push-action@v6
         with:
-          context: ./apps/beeai-server/Dockerfile
+          context: ./apps/beeai-server
           push: true
           tags: |
             ghcr.io/${{ github.repository }}/beeai-server:${{ github.sha }}
