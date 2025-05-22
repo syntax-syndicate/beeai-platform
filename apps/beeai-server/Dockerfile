@@ -4,7 +4,6 @@ COPY --from=ghcr.io/astral-sh/uv:0.6.2 /uv /bin/
 # tiktoken builds using rust and cargo
 RUN apk add --no-cache rust cargo
 COPY /apps/beeai-server/pyproject.toml .
-ENV UV_NO_CACHE=1
 RUN uv pip compile pyproject.toml >requirements.txt && \
     uv pip install --system -r requirements.txt && \
     rm requirements.txt pyproject.toml
@@ -22,6 +21,5 @@ ENV PATH="/app/.venv/bin:/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sb
     HOME="/tmp" \
     DISABLE_DOCKER=true \
     COLLECTOR_MANAGED=false \
-    AGENT_REGISTRY__LOCATION="file:///app/registry.yaml" \
-    UV_NO_CACHE=1
+    AGENT_REGISTRY__LOCATION="file:///app/registry.yaml"
 CMD ["beeai-server"]
