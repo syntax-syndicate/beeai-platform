@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
 
 import fastapi
 from fastapi.params import Query
@@ -19,7 +20,7 @@ from fastapi.params import Query
 from beeai_server.api.schema.provider import CreateProviderRequest
 from uuid import UUID
 
-from beeai_server.domain.models.provider import ProviderWithState
+from beeai_server.domain.models.provider import ProviderWithState, NetworkProviderLocation
 from beeai_server.api.routes.dependencies import ProviderServiceDependency
 from beeai_server.api.schema.common import PaginatedResponse
 from starlette.responses import StreamingResponse
@@ -45,6 +46,10 @@ async def deprecated_create_unmanaged_provider(
     request: CreateProviderRequest, provider_service: ProviderServiceDependency
 ) -> ProviderWithState:
     """Backward compatibility for ACP sdk."""
+    if isinstance(request.location, NetworkProviderLocation):
+        # localhost does not make sense in k8s environment, replace it with host.docker.internal for backward compatibility
+        url = re.sub(r"localhost|127\.0\.0\.1", "host.docker.internal", str(request.location.root))
+        request.location = NetworkProviderLocation(url)
     return await provider_service.create_provider(location=request.location, auto_remove=True)
 
 

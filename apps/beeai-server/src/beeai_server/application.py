@@ -45,7 +45,6 @@ from beeai_server.exceptions import ManifestLoadError, ProviderNotInstalledError
 from beeai_server.api.routes.provider import router as provider_router
 from beeai_server.api.routes.acp import router as acp_router
 from beeai_server.api.routes.env import router as env_router
-from beeai_server.api.routes.telemetry import router as telemetry_router
 from beeai_server.api.routes.llm import router as llm_router
 from beeai_server.api.routes.ui import router as ui_router
 
@@ -118,7 +117,6 @@ def mount_routes(app: FastAPI):
     server_router.include_router(acp_router, prefix="/acp")
     server_router.include_router(provider_router, prefix="/providers", tags=["providers"])
     server_router.include_router(env_router, prefix="/variables", tags=["variables"])
-    server_router.include_router(telemetry_router, prefix="/telemetry", tags=["telemetry"])
     server_router.include_router(llm_router, prefix="/llm", tags=["llm"])
     server_router.include_router(ui_router, prefix="/ui", tags=["ui"])
 
