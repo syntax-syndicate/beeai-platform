@@ -24,24 +24,26 @@ jobs:
       # PyPI
       - run: mise beeai-server:build
       - uses: pypa/gh-action-pypi-publish@release/v1
+        continue-on-error: true
         with:
           packages-dir: apps/beeai-server/dist
 
       # Docker
+      - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
-      - run: mise run beeai-server:image:build --platform=linux/amd64,linux/arm64
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - run: |
-          docker tag ghcr.io/i-am-bee/beeai-platform/beeai-server:local ghcr.io/${{ github.repository }}/beeai-server:${{ github.sha }}
-          docker tag ghcr.io/i-am-bee/beeai-platform/beeai-server:local ghcr.io/${{ github.repository }}/beeai-server:${{ steps.version.outputs.version }}
-          docker tag ghcr.io/i-am-bee/beeai-platform/beeai-server:local ghcr.io/${{ github.repository }}/beeai-server:latest
-          docker push ghcr.io/${{ github.repository }}/beeai-server:${{ github.sha }}
-          docker push ghcr.io/${{ github.repository }}/beeai-server:${{ steps.version.outputs.version }}
-          docker push ghcr.io/${{ github.repository }}/beeai-server:latest
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./apps/beeai-server/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/beeai-server:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/beeai-server:${{ steps.version.outputs.version }}
+            ghcr.io/${{ github.repository }}/beeai-server:latest
 
   build-and-push-helm-chart:
     # Inspired by: https://github.com/appany/helm-oci-chart-releaser
@@ -63,7 +65,7 @@ jobs:
         run: echo '${{ secrets.GITHUB_TOKEN }}' | helm registry login -u '${{ github.actor }}' --password-stdin ghcr.io
 
       - name: Helm | update dependencies
-        run: helm dependency update charts/beeai-platform
+        run: helm dependency update helm/beeai-platform
 
       - name: Helm | Package
         run: helm package helm/beeai-platform --version '${{ steps.version.outputs.version }}' --app-version ${{ steps.version.outputs.version }}
