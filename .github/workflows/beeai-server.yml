@@ -71,7 +71,7 @@ jobs:
         run: helm package helm/beeai-platform --version '${{ steps.version.outputs.version }}' --app-version ${{ steps.version.outputs.version }}
 
       - name: Helm | Push
-        run: helm push '$beeai-platform-${{ steps.version.outputs.version }}.tgz' 'oci://ghcr.io/${{ github.repository }}/beeai-platform-chart'
+        run: helm push 'beeai-platform-${{ steps.version.outputs.version }}.tgz' 'oci://ghcr.io/${{ github.repository }}/beeai-platform-chart'
 
   deploy-to-k8s:
     needs: build-and-publish-pypi-and-docker
