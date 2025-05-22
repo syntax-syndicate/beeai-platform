@@ -40,6 +40,7 @@ jobs:
         with:
           context: ./apps/beeai-server
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: |
             ghcr.io/${{ github.repository }}/beeai-server:${{ github.sha }}
             ghcr.io/${{ github.repository }}/beeai-server:${{ steps.version.outputs.version }}
