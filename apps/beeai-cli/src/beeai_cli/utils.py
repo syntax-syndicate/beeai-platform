@@ -207,7 +207,7 @@ def import_images_to_vm(vm_name: str):
             "--",
             "/bin/bash",
             "-c",
-            "ls /beeai/images | xargs -rn 1 sudo ctr images import",
+            "find /beeai/images -name '*.tar' | xargs -rn 1 sudo ctr images import",
         ],
         "Importing images",
         env={"LIMA_HOME": str(Configuration().lima_home)},
