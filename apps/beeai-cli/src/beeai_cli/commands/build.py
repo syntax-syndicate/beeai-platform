@@ -55,7 +55,9 @@ async def build(
     tag: Optional[str] = typer.Option(None, help="Docker tag for the agent"),
     multi_platform: Optional[bool] = False,
     quiet: typing.Annotated[bool, typer.Option(hidden=True)] = False,
-    import_image: typing.Annotated[bool, typer.Option("--import", help="Import the image into BeeAI platform")] = True,
+    import_image: typing.Annotated[
+        bool, typer.Option("--import/--no-import", is_flag=True, help="Import the image into BeeAI platform")
+    ] = True,
     vm_name: typing.Annotated[str, typer.Option(hidden=True)] = "beeai-platform",
     vm_driver: typing.Annotated[VMDriver, typer.Option(hidden=True)] = None,
 ):
