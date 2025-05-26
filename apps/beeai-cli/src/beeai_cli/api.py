@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import contextlib
 import enum
 import json
 import re
 import subprocess
-import time
 import urllib
 import urllib.parse
 from contextlib import asynccontextmanager
@@ -31,8 +31,6 @@ from httpx import HTTPStatusError
 from httpx._types import RequestFiles
 
 from beeai_cli.configuration import Configuration
-from beeai_cli.console import console, err_console
-from beeai_cli.utils import format_error
 
 config = Configuration()
 BASE_URL = str(config.host).rstrip("/")
@@ -82,35 +80,11 @@ def server_process_status(
     return ProcessStatus.not_running
 
 
-async def resolve_connection_error():
-    if BASE_URL != "http://localhost:8333":
-        err_console.print(format_error("ConnectError", "Could not connect to the BeeAI service."))
-        err_console.print(
-            f'💡 [yellow]HINT[/yellow]: You have set the BeeAI host to "[bold]{BASE_URL}[/bold]" -- is this correct?'
-        )
-        exit(1)
-
-    with console.status(
-        "Starting the BeeAI service, this might take a few minutes, please stand by...", spinner="dots"
-    ):
-        try:
-            import beeai_cli.commands.platform
-
-            beeai_cli.commands.platform.start()
-            await wait_for_api()
-        except Exception:
-            err_console.print(format_error("ConnectError", "We failed to automatically start the BeeAI service."))
-            err_console.print(
-                "💡 [yellow]HINT[/yellow]: Try starting the service manually with: [green]beeai platform start[/green]"
-            )
-            exit(1)
-
-
 async def wait_for_api(initial_delay_seconds=5, wait_seconds=300):
-    time.sleep(initial_delay_seconds)
+    await asyncio.sleep(initial_delay_seconds)
     for _ in range(wait_seconds):
-        time.sleep(1)
-        with contextlib.suppress(httpx.RemoteProtocolError, httpx.ReadError, httpx.ConnectError, ConnectionError):
+        await asyncio.sleep(1)
+        with contextlib.suppress(httpx.HTTPError, ConnectionError):
             await api_request("get", "providers")
             return True
     else:

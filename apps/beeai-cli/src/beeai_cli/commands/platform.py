@@ -13,13 +13,13 @@
 # limitations under the License.
 
 import json
-import pathlib
 import sys
 import shutil
 import time
 from typing import Optional
 import base64
 import typing
+import importlib.resources
 
 from beeai_cli.api import wait_for_api
 import typer
@@ -36,13 +36,67 @@ app = AsyncTyper()
 
 configuration = Configuration()
 
-DATA = pathlib.Path(__file__).joinpath("../../../../data").resolve()
-
 HelmChart = kr8s.asyncio.objects.new_class(
     kind="HelmChart",
     version="helm.cattle.io/v1",
     namespaced=True,
 )
+
+
+def _lima_yaml(k3s_port: int = 16443, beeai_port: int = 8333, phoenix_port: int = 6006) -> str:
+    return f"""minimumLimaVersion: 1.1.0
+
+base: template://_images/ubuntu-lts
+
+mounts:
+- location: "~/.beeai"
+  mountPoint: "/beeai"
+
+containerd:
+  system: false
+  user: false
+
+provision:
+- mode: system
+  script: |
+    #!/bin/sh
+    if [ ! -d /var/lib/rancher/k3s ]; then
+      curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --write-kubeconfig-mode 644 --https-listen-port={k3s_port}" sh -
+    fi
+- mode: system
+  script: |
+    #!/bin/sh
+    until kubectl get configmap coredns -n kube-system >/dev/null 2>&1; do
+      sleep 2
+    done
+    TMP=$(mktemp -d)
+    HOST_IP=$(dig +noall +short host.lima.internal)
+    kubectl get configmap coredns -n kube-system -o yaml >$TMP/coredns.yaml
+    if ! grep -q "host.docker.internal" $TMP/coredns.yaml; then
+      awk -v ip="$HOST_IP" '/^  NodeHosts: \|{{print; print "    " ip " host.docker.internal"; next}}1' $TMP/coredns.yaml >$TMP/coredns-patched.yaml
+      kubectl apply -f $TMP/coredns-patched.yaml
+      kubectl -n kube-system rollout restart deployment coredns
+    fi
+
+probes:
+- script: |
+    #!/bin/bash
+    set -eux -o pipefail
+    if ! timeout 30s bash -c "until test -f /etc/rancher/k3s/k3s.yaml; do sleep 3; done"; then
+      echo >&2 "k3s is not running yet"
+      exit 1
+    fi
+
+copyToHost:
+- guest: "/etc/rancher/k3s/k3s.yaml"
+  host: "{{{{.Dir}}}}/copied-from-guest/kubeconfig.yaml"
+  deleteOnStop: true
+
+portForwards:
+  - guestPort: 31833
+    hostPort: {beeai_port}
+  - guestPort: 31606
+    hostPort: {phoenix_port}"""
 
 
 def _validate_driver(vm_driver: VMDriver | None) -> VMDriver:
@@ -114,26 +168,48 @@ async def start(
             help="Import an image from a local Docker CLI into BeeAI platform",
         ),
     ] = [],
-    disable_telemetry_sharing: bool = typer.Option(False, help="Disable telemetry sharing"),
+    telemetry_sharing: bool = typer.Option(True, help="Control the sharing of telemetry data with the BeeAI team"),
     vm_driver: typing.Annotated[
         Optional[VMDriver], typer.Option(hidden=True, help="Platform driver: lima (VM) or docker (container)")
     ] = None,
+    k3s_port: typing.Annotated[int, typer.Option(hidden=True)] = 16443,
+    beeai_port: typing.Annotated[int, typer.Option(hidden=True)] = 8333,
+    phoenix_port: typing.Annotated[int, typer.Option(hidden=True)] = 6006,
 ):
     """Start BeeAI platform."""
     vm_driver = _validate_driver(vm_driver)
+
+    # Stage 0: Clean up legacy Brew services
+    run_command(
+        ["brew", "services", "stop", "beeai"],
+        "Cleaning up legacy BeeAI service",
+        check=False,
+        ignore_missing=True,
+    )
+    run_command(
+        ["brew", "services", "stop", "arize-phoenix"],
+        "Cleaning up legacy Arize Phoenix service",
+        check=False,
+        ignore_missing=True,
+    )
 
     # Stage 1: Start VM
     configuration.home.mkdir(exist_ok=True)
     status = _get_platform_status(vm_driver, vm_name)
     if not status:
-        configuration.lima_home.mkdir(parents=True, exist_ok=True)
+        templates_dir = configuration.lima_home / "_templates"
+        if vm_driver == VMDriver.lima:
+            templates_dir.mkdir(parents=True, exist_ok=True)
+            templates_dir.joinpath(f"{vm_name}.yaml").write_text(
+                _lima_yaml(k3s_port=k3s_port, beeai_port=beeai_port, phoenix_port=phoenix_port)
+            )
         run_command(
             {
                 VMDriver.lima: [
                     "limactl",
                     "--tty=false",
                     "start",
-                    DATA / "lima-vm.yaml",
+                    templates_dir / f"{vm_name}.yaml",
                     f"--name={vm_name}",
                 ],
                 VMDriver.docker: [
@@ -143,11 +219,11 @@ async def start(
                     f"--name={vm_name}",
                     f"--hostname={vm_name}",
                     "-p",
-                    "16443:16443",
+                    f"{k3s_port}:{k3s_port}",
                     "-p",
-                    "8333:31833",
+                    f"{beeai_port}:31833",
                     "-p",
-                    "6006:31606",
+                    f"{phoenix_port}:31606",
                     "-v",
                     f"{configuration.home}:/beeai",
                     "-d",
@@ -155,7 +231,7 @@ async def start(
                     "--",
                     "server",
                     "--write-kubeconfig-mode=644",
-                    "--https-listen-port=16443",
+                    f"--https-listen-port={k3s_port}",
                 ],
             }[vm_driver],
             "Creating BeeAI platform",
@@ -222,7 +298,9 @@ async def start(
                         "namespace": "default",
                     },
                     "spec": {
-                        "chartContent": base64.b64encode((DATA / "helm-chart.tgz").read_bytes()).decode(),
+                        "chartContent": base64.b64encode(
+                            (importlib.resources.files("beeai_cli") / "data" / "helm-chart.tgz").read_bytes()
+                        ).decode(),
                         "targetNamespace": "beeai",
                         "createNamespace": True,
                         "valuesContent": yaml.dump(
@@ -233,7 +311,7 @@ async def start(
                                 "encryptionKey": "Ovx8qImylfooq4-HNwOzKKDcXLZCB3c_m0JlB9eJBxc=",  # Dummy key for local use
                                 "features": {"uiNavigation": True},
                                 "auth": {"enabled": False},
-                                "telemetry": {"sharing": not disable_telemetry_sharing},
+                                "telemetry": {"sharing": telemetry_sharing},
                             }
                         ),
                         "set": {key: value for key, value in (value.split("=", 1) for value in set_values_list)},
@@ -257,7 +335,7 @@ async def start(
     with console.status("Waiting for BeeAI platform to be ready...", spinner="dots"):
         await wait_for_api()
 
-    console.print("[green]BeeAI platform deployed successfully![/green]")
+    console.print("[green]BeeAI platform started successfully![/green]")
 
 
 @app.command("stop")

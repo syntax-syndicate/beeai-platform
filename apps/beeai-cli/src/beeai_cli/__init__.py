@@ -58,7 +58,7 @@ async def ui():
 
     host_url = str(Configuration().host)
 
-    # Failure here will trigger the automatic service start mechanism
+    # Ping BeeAI platform to get an error early
     async with httpx.AsyncClient() as client:
         await client.head(host_url)
 

@@ -19,6 +19,7 @@ import sys
 import tempfile
 import typing
 
+from beeai_cli.configuration import Configuration
 import typer
 import httpx
 import subprocess
@@ -73,6 +74,11 @@ async def setup(
     use_true_localhost: typing.Annotated[bool, typer.Option(hidden=True)] = False,
 ) -> bool:
     """Interactive setup for LLM provider environment variables"""
+
+    # Ping BeeAI platform to get an error early
+    async with httpx.AsyncClient() as client:
+        await client.head(str(Configuration().host))
+
     provider_name, api_base, recommended_model = await inquirer.fuzzy(
         message="Select LLM provider (type to search):",
         choices=[
