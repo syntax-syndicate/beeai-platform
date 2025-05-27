@@ -73,7 +73,7 @@ provision:
     HOST_IP=$(dig +noall +short host.lima.internal)
     kubectl get configmap coredns -n kube-system -o yaml >$TMP/coredns.yaml
     if ! grep -q "host.docker.internal" $TMP/coredns.yaml; then
-      awk -v ip="$HOST_IP" '/^  NodeHosts: \|{{print; print "    " ip " host.docker.internal"; next}}1' $TMP/coredns.yaml >$TMP/coredns-patched.yaml
+      awk -v ip="$HOST_IP" '/^  NodeHosts: \|/{{print; print "    " ip " host.docker.internal"; next}}1' $TMP/coredns.yaml >$TMP/coredns-patched.yaml
       kubectl apply -f $TMP/coredns-patched.yaml
       kubectl -n kube-system rollout restart deployment coredns
     fi

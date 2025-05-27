@@ -70,7 +70,7 @@ async def build(
     image_id = "beeai-agent-build-tmp:latest"
     port = await find_free_port()
     if multi_platform:
-        build_command = "docker buildx build --platform=linux/amd64,linux/arm64"
+        build_command = "docker buildx build --platform=linux/amd64,linux/arm64 --load"
     else:
         build_command = "docker build"
 
