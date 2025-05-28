@@ -306,7 +306,7 @@ async def start(
                         "valuesContent": yaml.dump(
                             {
                                 "externalRegistries": {
-                                    "public_github": "https://github.com/i-am-bee/beeai-platform@release-v0.1.3#path=agent-registry.yaml"
+                                    "public_github": "https://github.com/i-am-bee/beeai-platform@release-v0.2.0#path=agent-registry.yaml"
                                 },
                                 "encryptionKey": "Ovx8qImylfooq4-HNwOzKKDcXLZCB3c_m0JlB9eJBxc=",  # Dummy key for local use
                                 "features": {"uiNavigation": True},
