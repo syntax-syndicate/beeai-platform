@@ -207,8 +207,3 @@ mise.local.toml
 
 # Ruff
 .ruff_cache/
-
-# Artifacts
-*.tgz
-*.tar.gz
-*.whl

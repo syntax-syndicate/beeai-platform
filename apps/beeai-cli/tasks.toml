@@ -57,7 +57,7 @@ run = "(rm {{config_root}}/apps/beeai-cli/src/beeai_cli/data/*.tgz 2>/dev/null |
 depends = ["setup:uv", "helm:build:beeai-platform"]
 dir = "{{config_root}}/apps/beeai-cli"
 run = "(rm {{config_root}}/apps/beeai-cli/src/beeai_cli/data/*.tgz 2>/dev/null || true) && cp {{config_root}}/helm/beeai-platform-*.tgz {{config_root}}/apps/beeai-cli/src/beeai_cli/data/helm-chart.tgz && rm -rf ./dist && uv build --out-dir dist"
-sources = ["src/**/*.py"]
+sources = ["src/**/*"]
 outputs = ["dist/**/*"]
 
 # clean
