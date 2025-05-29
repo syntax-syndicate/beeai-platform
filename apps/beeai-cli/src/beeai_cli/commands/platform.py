@@ -12,24 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
-import sys
-import shutil
-import time
-from typing import Optional
+import asyncio
 import base64
-import typing
 import importlib.resources
+import json
+import shutil
+import sys
+import typing
 
-from beeai_cli.api import wait_for_api
-import typer
 import kr8s.asyncio
 import kr8s.asyncio.objects
+import typer
 import yaml
 
-from beeai_cli import Configuration
-from beeai_cli.console import console
+from beeai_cli.api import wait_for_api
 from beeai_cli.async_typer import AsyncTyper
+from beeai_cli.configuration import Configuration
+from beeai_cli.console import console
 from beeai_cli.utils import VMDriver, run_command
 
 app = AsyncTyper()
@@ -44,7 +43,7 @@ HelmChart = kr8s.asyncio.objects.new_class(
 
 
 def _lima_yaml(k3s_port: int = 16443, beeai_port: int = 8333, phoenix_port: int = 6006) -> str:
-    return f"""minimumLimaVersion: 1.1.0
+    return rf"""minimumLimaVersion: 1.1.0
 
 base: template://_images/ubuntu-lts
 
@@ -120,11 +119,11 @@ def _validate_driver(vm_driver: VMDriver | None) -> VMDriver:
     return vm_driver
 
 
-def _get_platform_status(vm_driver: VMDriver, vm_name: str) -> str | None:
+async def _get_platform_status(vm_driver: VMDriver, vm_name: str) -> str | None:
     try:
         match vm_driver:
             case VMDriver.lima:
-                result = run_command(
+                result = await run_command(
                     ["limactl", "--tty=false", "list", "--format=json"],
                     "Looking for existing BeeAI platform",
                     env={"LIMA_HOME": str(configuration.lima_home)},
@@ -140,7 +139,7 @@ def _get_platform_status(vm_driver: VMDriver, vm_name: str) -> str | None:
                     None,
                 )
             case VMDriver.docker:
-                result = run_command(
+                result = await run_command(
                     ["docker", "inspect", vm_name],
                     "Looking for existing BeeAI platform",
                     check=False,
@@ -160,17 +159,20 @@ async def start(
             default_factory=list,
         ),
     ],
-    vm_name: typing.Annotated[str, typer.Option(hidden=True)] = "beeai-platform",
     import_images: typing.Annotated[
         list[str],
         typer.Option(
             "--import",
             help="Import an image from a local Docker CLI into BeeAI platform",
+            default_factory=list,
         ),
-    ] = [],
-    telemetry_sharing: bool = typer.Option(True, help="Control the sharing of telemetry data with the BeeAI team"),
+    ],
+    telemetry_sharing: typing.Annotated[
+        bool, typer.Option(help="Control the sharing of telemetry data with the BeeAI team")
+    ] = True,
+    vm_name: typing.Annotated[str, typer.Option(hidden=True)] = "beeai-platform",
     vm_driver: typing.Annotated[
-        Optional[VMDriver], typer.Option(hidden=True, help="Platform driver: lima (VM) or docker (container)")
+        VMDriver | None, typer.Option(hidden=True, help="Platform driver: lima (VM) or docker (container)")
     ] = None,
     k3s_port: typing.Annotated[int, typer.Option(hidden=True)] = 16443,
     beeai_port: typing.Annotated[int, typer.Option(hidden=True)] = 8333,
@@ -180,13 +182,13 @@ async def start(
     vm_driver = _validate_driver(vm_driver)
 
     # Stage 0: Clean up legacy Brew services
-    run_command(
+    await run_command(
         ["brew", "services", "stop", "beeai"],
         "Cleaning up legacy BeeAI service",
         check=False,
         ignore_missing=True,
     )
-    run_command(
+    await run_command(
         ["brew", "services", "stop", "arize-phoenix"],
         "Cleaning up legacy Arize Phoenix service",
         check=False,
@@ -195,7 +197,7 @@ async def start(
 
     # Stage 1: Start VM
     configuration.home.mkdir(exist_ok=True)
-    status = _get_platform_status(vm_driver, vm_name)
+    status = await _get_platform_status(vm_driver, vm_name)
     if not status:
         templates_dir = configuration.lima_home / "_templates"
         if vm_driver == VMDriver.lima:
@@ -203,7 +205,7 @@ async def start(
             templates_dir.joinpath(f"{vm_name}.yaml").write_text(
                 _lima_yaml(k3s_port=k3s_port, beeai_port=beeai_port, phoenix_port=phoenix_port)
             )
-        run_command(
+        await run_command(
             {
                 VMDriver.lima: [
                     "limactl",
@@ -238,7 +240,7 @@ async def start(
             env={"LIMA_HOME": str(configuration.lima_home)},
         )
     elif status != "running":
-        run_command(
+        await run_command(
             {
                 VMDriver.lima: ["limactl", "--tty=false", "start", vm_name],
                 VMDriver.docker: ["docker", "start", vm_name],
@@ -250,7 +252,7 @@ async def start(
         console.print("Updating an existing BeeAI platform instance.")
 
     if vm_driver == VMDriver.lima:
-        run_command(
+        await run_command(
             ["limactl", "--tty=false", "start-at-login", vm_name],
             "Configuring BeeAI platform",
             env={"LIMA_HOME": str(configuration.lima_home)},
@@ -259,14 +261,14 @@ async def start(
     if vm_driver == VMDriver.docker:
         for _ in range(10):
             with console.status("Waiting for k3s to start...", spinner="dots"):
-                time.sleep(2)
-            status = _get_platform_status(vm_driver, vm_name)
+                await asyncio.sleep(2)
+            status = await _get_platform_status(vm_driver, vm_name)
             if status != "running":
                 console.print("[red]Error: k3s crashed when starting up.[/red]")
                 sys.exit(1)
 
             if (
-                run_command(
+                await run_command(
                     ["docker", "exec", vm_name, "test", "-f", "/etc/rancher/k3s/k3s.yaml"],
                     message="Checking if k3s is running",
                     check=False,
@@ -279,7 +281,7 @@ async def start(
             sys.exit(1)
         kubeconfig = configuration.get_kubeconfig(vm_driver=vm_driver, vm_name=vm_name)
         kubeconfig.parent.mkdir(parents=True, exist_ok=True)
-        run_command(
+        await run_command(
             ["docker", "cp", f"{vm_name}:/etc/rancher/k3s/k3s.yaml", str(kubeconfig)],
             "Copying Kubernetes configuration",
         )
@@ -301,8 +303,7 @@ async def start(
                         "chartContent": base64.b64encode(
                             (importlib.resources.files("beeai_cli") / "data" / "helm-chart.tgz").read_bytes()
                         ).decode(),
-                        "targetNamespace": "beeai",
-                        "createNamespace": True,
+                        "targetNamespace": "default",
                         "valuesContent": yaml.dump(
                             {
                                 "externalRegistries": {
@@ -314,7 +315,7 @@ async def start(
                                 "telemetry": {"sharing": telemetry_sharing},
                             }
                         ),
-                        "set": {key: value for key, value in (value.split("=", 1) for value in set_values_list)},
+                        "set": dict(value.split("=", 1) for value in set_values_list),
                     },
                 },
                 api=await kr8s.asyncio.api(
@@ -342,19 +343,19 @@ async def start(
 async def stop(
     vm_name: typing.Annotated[str, typer.Option(hidden=True)] = "beeai-platform",
     vm_driver: typing.Annotated[
-        Optional[VMDriver], typer.Option(hidden=True, help="Platform driver: lima (VM) or docker (container)")
+        VMDriver | None, typer.Option(hidden=True, help="Platform driver: lima (VM) or docker (container)")
     ] = None,
 ):
     """Stop BeeAI platform."""
     vm_driver = _validate_driver(vm_driver)
-    status = _get_platform_status(vm_driver, vm_name)
+    status = await _get_platform_status(vm_driver, vm_name)
     if not status:
         console.print("BeeAI platform not found. Nothing to stop.")
         return
     if status != "running":
         console.print("BeeAI platform is not running. Nothing to stop.")
         return
-    run_command(
+    await run_command(
         {
             VMDriver.lima: ["limactl", "--tty=false", "stop", vm_name],
             VMDriver.docker: ["docker", "stop", vm_name],
@@ -369,22 +370,19 @@ async def stop(
 async def delete(
     vm_name: typing.Annotated[str, typer.Option(hidden=True)] = "beeai-platform",
     vm_driver: typing.Annotated[
-        Optional[VMDriver], typer.Option(hidden=True, help="Platform driver: lima (VM) or docker (container)")
+        VMDriver | None, typer.Option(hidden=True, help="Platform driver: lima (VM) or docker (container)")
     ] = None,
 ):
     """Delete BeeAI platform."""
     vm_driver = _validate_driver(vm_driver)
-    status = _get_platform_status(vm_driver, vm_name)
-    if not status:
-        console.print("BeeAI VM not found. Nothing to delete.")
-        return
-    run_command(
+    await run_command(
         {
             VMDriver.lima: ["limactl", "--tty=false", "delete", "--force", vm_name],
             VMDriver.docker: ["docker", "rm", "--force", vm_name],
         }[vm_driver],
         "Deleting BeeAI platform",
         env={"LIMA_HOME": str(configuration.lima_home)},
+        check=False,
     )
     console.print("[green]BeeAI platform deleted successfully.[/green]")
 
@@ -394,19 +392,19 @@ async def import_image(
     tag: typing.Annotated[str, typer.Argument(help="Docker image tag to import")],
     vm_name: typing.Annotated[str, typer.Option(hidden=True)] = "beeai-platform",
     vm_driver: typing.Annotated[
-        Optional[VMDriver], typer.Option(hidden=True, help="Platform driver: lima (VM) or docker (container)")
+        VMDriver | None, typer.Option(hidden=True, help="Platform driver: lima (VM) or docker (container)")
     ] = None,
 ):
     """Import a local docker image into the BeeAI platform."""
     driver = _validate_driver(vm_driver)
-    run_command(["bash", "-c", "rm -f ~/.beeai/images/*"], "Removing temporary files")
+    await run_command(["bash", "-c", "rm -f ~/.beeai/images/*"], "Removing temporary files")
     image_path = Configuration().home / "images" / (tag.replace("/", "_") + ".tar")
     image_path.parent.mkdir(parents=True, exist_ok=True)
-    run_command(
+    await run_command(
         ["docker", "image", "save", "-o", str(image_path), tag],
         "Exporting images from Docker",
     )
-    run_command(
+    await run_command(
         {
             VMDriver.lima: ["limactl", "--tty=false", "shell", vm_name, "--"],
             VMDriver.docker: ["docker", "exec", vm_name],
@@ -420,4 +418,4 @@ async def import_image(
         env={"LIMA_HOME": str(Configuration().lima_home)},
         cwd="/",
     )
-    run_command(["/bin/sh", "-c", "rm -f ~/.beeai/images/*"], "Removing temporary files")
+    await run_command(["/bin/sh", "-c", "rm -f ~/.beeai/images/*"], "Removing temporary files")
