@@ -1,4 +1,4 @@
-name: Common
+name: e2e-test
 
 permissions:
   contents: read
