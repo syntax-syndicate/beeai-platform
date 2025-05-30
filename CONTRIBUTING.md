@@ -43,7 +43,7 @@ Starting up the platform using the CLI (`beeai platform start`, even `mise beeai
 Build a local `ghcr.io/i-am-bee/beeai-platform/beeai-server:local` image using:
 
 ```sh
-mise beeai-server:image:save
+mise beeai-server:image:build
 ```
 
 Then, start the platform using:
