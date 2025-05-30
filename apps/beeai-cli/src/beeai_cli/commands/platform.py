@@ -49,26 +49,16 @@ containerd:
   system: false
   user: false
 
+hostResolver:
+  hosts:
+    host.docker.internal: host.lima.internal
+
 provision:
 - mode: system
   script: |
     #!/bin/sh
     if [ ! -d /var/lib/rancher/k3s ]; then
-      curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --write-kubeconfig-mode 644 --https-listen-port={k3s_port}" sh -
-    fi
-- mode: system
-  script: |
-    #!/bin/sh
-    until kubectl get configmap coredns -n kube-system >/dev/null 2>&1; do
-      sleep 2
-    done
-    TMP=$(mktemp -d)
-    HOST_IP=$(dig +noall +short host.lima.internal)
-    kubectl get configmap coredns -n kube-system -o yaml >$TMP/coredns.yaml
-    if ! grep -q "host.docker.internal" $TMP/coredns.yaml; then
-      awk -v ip="$HOST_IP" '/^  NodeHosts: \|/{{print; print "    " ip " host.docker.internal"; next}}1' $TMP/coredns.yaml >$TMP/coredns-patched.yaml
-      kubectl apply -f $TMP/coredns-patched.yaml
-      kubectl -n kube-system rollout restart deployment coredns
+      curl -sfL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644 --https-listen-port={k3s_port}
     fi
 
 probes:
