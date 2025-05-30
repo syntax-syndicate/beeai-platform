@@ -222,7 +222,7 @@ export DB_URL="postgresql+asyncpg://beeai-user:password@localhost:5432/beeai"
 
 export LLM_API_BASE="${LLM_API_BASE:-http://host.docker.internal:11434/v1}"
 
-kubectl port-forward -n beeai svc/postgresql 5432:5432 2>/dev/null 1>&2 &
+kubectl port-forward svc/postgresql 5432:5432 2>/dev/null 1>&2 &
 pytest -m e2e
 result=$?
 mise run beeai-cli:run -- platform delete --vm-name=${VM_NAME}
