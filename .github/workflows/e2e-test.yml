@@ -8,12 +8,13 @@ on:
   pull_request:
     paths:
       - 'apps/beeai-server/**'
+      - 'apps/beeai-cli/**'
   push:
     branches:
       - main
     paths:
       - 'apps/beeai-server/**'
-
+      - 'apps/beeai-cli/**'
 jobs:
   e2e-test:
     runs-on: ubuntu-latest
