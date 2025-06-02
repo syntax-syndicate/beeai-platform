@@ -40,17 +40,7 @@ sources = ["Chart.yaml", "Chart.lock"]
 outputs = { auto = true }
 
 ["helm:build:beeai-platform"]
-dir = "{{config_root}}/helm"
-run = "helm package beeai-platform"
 depends = ["helm:build:beeai-platform:dependencies"]
-sources = ["beeai-platform/**/*"]
-
-["helm:local:deploy"]
 dir = "{{config_root}}/helm"
-run = "./scripts/deploy_local_helm.sh"
-sources = ["beeai-platform/**/*"]
-
-["helm:local:clean"]
-dir = "{{config_root}}/helm"
-run = "kubectl delete namespace beeai-helm-local || true"
-sources = ["beeai-platform/**/*"]
+run = "helm package beeai-platform --app-version $(python -c \"import tomllib; print(tomllib.load(open('../apps/beeai-server/pyproject.toml', 'rb'))['project']['version'])\")"
+sources = ["beeai-platform/**/*", "../apps/beeai-server/pyproject.toml"]
