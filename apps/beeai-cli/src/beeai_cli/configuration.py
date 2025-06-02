@@ -30,6 +30,9 @@ class Configuration(pydantic_settings.BaseSettings):
     playground: str = "playground"
     debug: bool = False
     home: pathlib.Path = pathlib.Path.home() / ".beeai"
+    agent_registry: pydantic.AnyUrl = (
+        "https://github.com/i-am-bee/beeai-platform@release-v0.2.0#path=agent-registry.yaml"
+    )
 
     @property
     def lima_home(self) -> pathlib.Path:
