@@ -238,7 +238,12 @@ async def start(
                 ],
             }[vm_driver],
             "Creating a " + {VMDriver.lima: "Lima VM", VMDriver.docker: "Docker container"}[vm_driver],
-            env={"LIMA_HOME": str(configuration.lima_home)},
+            env={
+                "LIMA_HOME": str(configuration.lima_home),
+                # Hotfix for port-forwarding until this issue is resolved:
+                # https://github.com/lima-vm/lima/issues/3601#issuecomment-2936952923
+                "LIMA_SSH_PORT_FORWARDER": "true",
+            },
         )
     elif status != "running":
         await run_command(
@@ -259,9 +264,21 @@ async def start(
 
     if vm_driver == VMDriver.lima:
         await run_command(
-            ["limactl", "--tty=false", "start-at-login", vm_name],
+            [
+                "limactl",
+                "--tty=false",
+                "start-at-login",
+                # TODO: temporarily disabled due to port-forwarding issue (workaround not working in start-at-login)
+                "--enabled=false",
+                vm_name,
+            ],
             "Configuring",
-            env={"LIMA_HOME": str(configuration.lima_home)},
+            env={
+                "LIMA_HOME": str(configuration.lima_home),
+                # Hotfix for port-forwarding until this issue is resolved:
+                # https://github.com/lima-vm/lima/issues/3601#issuecomment-2936952923
+                "LIMA_SSH_PORT_FORWARDER": "true",
+            },
         )
 
     if vm_driver == VMDriver.docker:

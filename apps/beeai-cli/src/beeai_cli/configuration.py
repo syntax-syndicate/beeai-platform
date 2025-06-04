@@ -27,7 +27,7 @@ class Configuration(pydantic_settings.BaseSettings):
         env_file=None, env_prefix="BEEAI__", env_nested_delimiter="__", extra="allow"
     )
     host: pydantic.AnyUrl = "http://localhost:8333"
-    playground: str = "playground"
+    playground: str = "compose"
     debug: bool = False
     home: pathlib.Path = pathlib.Path.home() / ".beeai"
     agent_registry: pydantic.AnyUrl = (
