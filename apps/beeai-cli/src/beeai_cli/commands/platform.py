@@ -82,14 +82,6 @@ portForwards:
     hostPort: {phoenix_port}"""
 
 
-def _vm_exec_command(vm_driver: VMDriver, vm_name: str) -> list[str]:
-    match vm_driver:
-        case VMDriver.lima:
-            return ["limactl", "shell", vm_name, "--"]
-        case VMDriver.docker:
-            return ["docker", "exec", vm_name, "--"]
-
-
 def _validate_driver(vm_driver: VMDriver | None) -> VMDriver:
     match vm_driver:
         case None:
@@ -284,30 +276,18 @@ async def start(
     if vm_driver == VMDriver.docker:
         for _ in range(10):
             with console.status("Waiting for k3s to start...", spinner="dots"):
-                await asyncio.sleep(2)
-            status = await _get_platform_status(vm_driver, vm_name)
-            if status != "running":
-                console.print("[red]Error: k3s crashed when starting up.[/red]")
-                sys.exit(1)
-
+                await asyncio.sleep(5)
             if (
                 await run_command(
-                    ["docker", "exec", vm_name, "test", "-f", "/etc/rancher/k3s/k3s.yaml"],
+                    ["docker", "exec", vm_name, "kubectl", "get", "crd", "helmcharts.helm.cattle.io"],
                     message="Checking if k3s is running",
                     check=False,
-                ).returncode
-                == 0
-            ):
+                )
+            ).returncode == 0:
                 break
         else:
-            console.print("[red]Error: Timed out waiting for kubeconfig: k3s probably failed to start.[/red]")
+            console.print("[red]Error: Timed out waiting for k3s to start.[/red]")
             sys.exit(1)
-        kubeconfig = configuration.get_kubeconfig(vm_driver=vm_driver, vm_name=vm_name)
-        kubeconfig.parent.mkdir(parents=True, exist_ok=True)
-        await run_command(
-            ["docker", "cp", f"{vm_name}:/etc/rancher/k3s/k3s.yaml", str(kubeconfig)],
-            "Copying Kubernetes configuration",
-        )
 
     # Import images
     for image in import_images:
@@ -315,7 +295,15 @@ async def start(
 
     # Deploy HelmChart
     await run_command(
-        [*_vm_exec_command(vm_driver, vm_name), "kubectl", "apply", "-f", "-"],
+        [
+            *{VMDriver.lima: ["limactl", "shell", vm_name, "--"], VMDriver.docker: ["docker", "exec", "-i", vm_name]}[
+                vm_driver
+            ],
+            "kubectl",
+            "apply",
+            "-f",
+            "-",
+        ],
         "Applying Helm chart",
         input=yaml.dump(
             {
@@ -436,16 +424,23 @@ async def import_image(
 
 @app.command("exec")
 async def exec(
-    command: typing.Annotated[list[str], typer.Argument()],
+    command: typing.Annotated[list[str] | None, typer.Argument()] = None,
     vm_name: typing.Annotated[str, typer.Option(hidden=True)] = "beeai-platform",
     vm_driver: typing.Annotated[
         VMDriver | None, typer.Option(hidden=True, help="Platform driver: lima (VM) or docker (container)")
     ] = None,
 ):
     """For debugging -- execute a command inside the BeeAI platform VM."""
+    command = command or ["/bin/sh"]
     vm_driver = _validate_driver(vm_driver)
     await anyio.run_process(
-        [*_vm_exec_command(vm_driver, vm_name), *command],
+        [
+            *{
+                VMDriver.lima: ["limactl", "shell", f"--tty={sys.stdin.isatty()}", vm_name, "--"],
+                VMDriver.docker: ["docker", "exec", "-it" if sys.stdin.isatty() else "-i", vm_name],
+            }[vm_driver],
+            *command,
+        ],
         input=None if sys.stdin.isatty() else sys.stdin.read(),
         check=False,
         stdout=None,

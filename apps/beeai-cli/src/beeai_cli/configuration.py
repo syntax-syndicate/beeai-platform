@@ -18,8 +18,6 @@ import pathlib
 import pydantic
 import pydantic_settings
 
-from beeai_cli.utils import VMDriver
-
 
 @functools.cache
 class Configuration(pydantic_settings.BaseSettings):
@@ -41,11 +39,3 @@ class Configuration(pydantic_settings.BaseSettings):
     @property
     def docker_home(self) -> pathlib.Path:
         return self.home / "docker"
-
-    def get_kubeconfig(self, *, vm_driver: VMDriver, vm_name: str) -> pathlib.Path:
-        return (
-            {VMDriver.lima: self.lima_home, VMDriver.docker: self.docker_home}[vm_driver]
-            / vm_name
-            / "copied-from-guest"
-            / "kubeconfig.yaml"
-        )
