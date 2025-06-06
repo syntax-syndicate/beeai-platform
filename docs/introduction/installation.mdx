@@ -140,8 +140,8 @@ beeai platform start
 ### Uninstall
 
 ```bash
-pipx uninstall beeai-cli
-beeai platform start
+beeai platform delete
+brew uninstall beeai
 ```
 
 </Tab>
@@ -162,8 +162,8 @@ wsl --install
 ```
 
 3. Restart your computer when prompted
-4. After restart, a terminal window will open to complete the Ubuntu installation
-5. Create a username and password for your Ubuntu installation
+4. After restart, a terminal window will open to complete the WSL2 Ubuntu installation
+5. You will be prompted to create a username and password
 
 </Step>
 <Step title="Configure WSL2 networking">
@@ -233,14 +233,14 @@ First configure your container runtime to be accessible from WSL2:
 
 1. Open Rancher Desktop
 2. Go to Preferences > WSL Integration
-3. Enable integration for your Ubuntu distro
+3. Enable integration for your Ubuntu WSL2 distro
 
 </Tab>
 <Tab title="Docker Desktop">
 
 1. Open Docker Desktop
 2. Go to Settings > Resources > WSL Integration
-3. Enable integration for your Ubuntu distro
+3. Enable integration for your Ubuntu WSL2 distro
 
 </Tab>
 <Tab title="Podman Desktop">
@@ -250,12 +250,12 @@ For Podman Desktop, follow the [documentation for socket forwarding to WSL2](htt
 </Tab>
 </Tabs>
 
-Ensure that `docker` works in WSL2 by running the following in an Ubuntu (WSL2) shell:
+Ensure that `docker` works in WSL2 by running the following in the Ubuntu (WSL2) shell:
 ```bash
 docker ps
 ```
 
-In the Ubuntu (WSL2) shell, run:
+Install `pipx` with:
 
 ```bash
 sudo apt update
@@ -263,7 +263,7 @@ sudo apt install pipx
 pipx ensurepath
 ```
 
-Then close and re-open the terminal window to make sure the `pipx` command is available.
+Close and re-open the terminal window to make sure the `pipx` command is available.
 
 </Tab>
 </Tabs>
@@ -295,8 +295,8 @@ beeai platform start
 ### Uninstall
 
 ```bash
-pipx uninstall beeai-cli
-beeai platform start
+beeai platform delete
+brew uninstall beeai
 ```
 
 </Tab>
