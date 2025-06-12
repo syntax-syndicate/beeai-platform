@@ -12,14 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import fastapi
+from typing import Callable, Awaitable
+from uuid import UUID, uuid4
 
-from beeai_server.configuration import UIFeatureFlags
-from beeai_server.api.dependencies import ConfigurationDependency
+from pydantic import BaseModel, AwareDatetime, Field
 
-router = fastapi.APIRouter()
+from beeai_server.utils.utils import utc_now
 
 
-@router.get("/config")
-def get_ui_config(config: ConfigurationDependency) -> UIFeatureFlags:
-    return config.feature_flags.ui
+class AsyncFile(BaseModel):
+    filename: str
+    content_type: str
+    read: Callable[[int], Awaitable[bytes]]
+    size: int | None = None
+
+
+class File(BaseModel):
+    id: UUID = Field(default_factory=uuid4)
+    filename: str
+    file_size_bytes: int | None = None
+    created_at: AwareDatetime = Field(default_factory=utc_now)
+    created_by: UUID
