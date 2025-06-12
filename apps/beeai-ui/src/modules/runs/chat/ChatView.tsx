@@ -14,30 +14,14 @@
  * limitations under the License.
  */
 
-.root {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  inline-size: rem(16px);
-  block-size: rem(16px);
-  :global(.cds--inline-loading__animation) {
-    margin-inline-end: 0;
-  }
-}
+import type { PropsWithChildren } from 'react';
 
-.button {
-  @include hidePopover();
+import { MainContent } from '#components/layouts/MainContent.tsx';
 
-  :global(.cds--btn) {
-    inline-size: rem(24px);
-    block-size: rem(24px);
-    min-block-size: 0;
-    &:hover,
-    &:active {
-      background-color: transparent;
-    }
-    &:focus {
-      outline-offset: 2px;
-    }
-  }
+export function ChatView({ children }: PropsWithChildren) {
+  return (
+    <>
+      <MainContent limitHeight>{children}</MainContent>
+    </>
+  );
 }
