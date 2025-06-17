@@ -414,7 +414,7 @@ async def start(
         if vm_driver == VMDriver.lima:
             await run_command(
                 [
-                    "limactl",
+                    _limactl_exe(),
                     "--tty=false",
                     "start-at-login",
                     # TODO: temporarily disabled due to port-forwarding issue (workaround not working in start-at-login)
