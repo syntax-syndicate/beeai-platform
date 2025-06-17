@@ -95,8 +95,8 @@ build_wheel() {
   platform_wheel="$(realpath "./dist")/beeai_cli-$version-py3-none-$wheel_tag.whl"
   cp "$universal_wheel" "$platform_wheel"
   unzip -q "$universal_wheel" "beeai_cli-$version.dist-info/WHEEL" -d "$tmpdir"
-  sed -i '' "s/Root-Is-Purelib: true/Root-Is-Purelib: false/" "$tmpdir/beeai_cli-$version.dist-info/WHEEL"
-  sed -i '' "s/Tag: .*/Tag: py3-none-$wheel_tag/" "$tmpdir/beeai_cli-$version.dist-info/WHEEL"
+  perl -pi -e "s/Root-Is-Purelib: true/Root-Is-Purelib: false/" "$tmpdir/beeai_cli-$version.dist-info/WHEEL"
+  perl -pi -e "s/Tag: .*/Tag: py3-none-$wheel_tag/" "$tmpdir/beeai_cli-$version.dist-info/WHEEL"
   mkdir -p "$tmpdir/beeai_cli/data"
   cp "./vendor/lima-$lima_version/$wheel_tag/bin/limactl" "./vendor/lima-$lima_version/$wheel_tag/share/lima/lima-guestagent.Linux-$hostagent_arch"* "$tmpdir/beeai_cli/data"
   (cd "$tmpdir" && zip -q "$platform_wheel" -r .)
