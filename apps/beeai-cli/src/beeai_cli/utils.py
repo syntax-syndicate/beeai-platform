@@ -248,9 +248,6 @@ async def run_command(
         console.print(f"{message} [[red]ERROR[/red]]")
         tool_name = command[0]
         console.print(f"[red]Error: {tool_name} is not installed. Please install {tool_name} first.[/red]")
-        if tool_name == "limactl":
-            console.print("[yellow]You can install Lima with: brew install lima[/yellow]")
-        raise
     except subprocess.CalledProcessError as e:
         console.print(f"{message} [[red]ERROR[/red]]")
         err_console.print(f"[red]Exit code: {e.returncode} [/red]")
