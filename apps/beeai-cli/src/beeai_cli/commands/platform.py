@@ -421,7 +421,7 @@ async def start(
                     "--enabled=false",
                     vm_name,
                 ],
-                "Configuring",
+                "Disabling start-at-login",
                 env={
                     "LIMA_HOME": str(Configuration().lima_home),
                     # Hotfix for port-forwarding until this issue is resolved:
@@ -584,6 +584,7 @@ async def start(
                         "namespace": "default",
                     },
                     "spec": {
+                        "timeout": "1h",
                         "chartContent": base64.b64encode(
                             (importlib.resources.files("beeai_cli") / "data" / "helm-chart.tgz").read_bytes()
                         ).decode(),
@@ -601,6 +602,41 @@ async def start(
                     },
                 }
             ).encode("utf-8"),
+            env={"LIMA_HOME": str(Configuration().lima_home)},
+            cwd="/",
+        )
+
+        await run_command(
+            [
+                *{
+                    VMDriver.lima: [_limactl_exe(), "shell", "--tty=false", vm_name, "--"],
+                    VMDriver.docker: ["docker", "exec", "-i", vm_name],
+                    VMDriver.wsl: ["wsl.exe", "--user", "root", "--distribution", vm_name, "--"],
+                }[vm_driver],
+                "kubectl",
+                "wait",
+                "--for=condition=JobCreated",
+                "helmchart.helm.cattle.io/beeai",
+            ],
+            "Waiting for deploy job to be created",
+            env={"LIMA_HOME": str(Configuration().lima_home)},
+            cwd="/",
+        )
+
+        await run_command(
+            [
+                *{
+                    VMDriver.lima: [_limactl_exe(), "shell", "--tty=false", vm_name, "--"],
+                    VMDriver.docker: ["docker", "exec", "-i", vm_name],
+                    VMDriver.wsl: ["wsl.exe", "--user", "root", "--distribution", vm_name, "--"],
+                }[vm_driver],
+                "kubectl",
+                "wait",
+                "--for=condition=Complete",
+                "--timeout=1h",
+                "job/helm-install-beeai",
+            ],
+            "Waiting for deploy job to be finished",
             env={"LIMA_HOME": str(Configuration().lima_home)},
             cwd="/",
         )
@@ -795,27 +831,29 @@ async def exec(
     vm_driver: typing.Annotated[
         VMDriver | None, typer.Option(hidden=True, help="Platform driver: lima (VM) or docker (container)")
     ] = None,
+    verbose: typing.Annotated[bool, typer.Option("-v", help="Show verbose output")] = False,
 ):
     """For debugging -- execute a command inside the BeeAI platform VM."""
-    command = command or ["/bin/sh"]
-    vm_driver = await _validate_driver(vm_driver)
-    status = await _get_platform_status(vm_driver, vm_name)
-    if status != "running":
-        console.log("[red]BeeAI platform is not running.[/red]")
-        sys.exit(1)
-    await anyio.run_process(
-        [
-            *{
-                VMDriver.lima: [_limactl_exe(), "shell", f"--tty={sys.stdin.isatty()}", vm_name, "--"],
-                VMDriver.docker: ["docker", "exec", "-it" if sys.stdin.isatty() else "-i", vm_name],
-                VMDriver.wsl: ["wsl.exe", "--user", "root", "--distribution", vm_name, "--"],
-            }[vm_driver],
-            *command,
-        ],
-        input=None if sys.stdin.isatty() else sys.stdin.read(),
-        check=False,
-        stdout=None,
-        stderr=None,
-        env={**os.environ, "LIMA_HOME": str(Configuration().lima_home)},
-        cwd="/",
-    )
+    with verbosity(verbose):
+        command = command or ["/bin/sh"]
+        vm_driver = await _validate_driver(vm_driver)
+        status = await _get_platform_status(vm_driver, vm_name)
+        if status != "running":
+            console.log("[red]BeeAI platform is not running.[/red]")
+            sys.exit(1)
+        await anyio.run_process(
+            [
+                *{
+                    VMDriver.lima: [_limactl_exe(), "shell", f"--tty={sys.stdin.isatty()}", vm_name, "--"],
+                    VMDriver.docker: ["docker", "exec", "-it" if sys.stdin.isatty() else "-i", vm_name],
+                    VMDriver.wsl: ["wsl.exe", "--user", "root", "--distribution", vm_name, "--"],
+                }[vm_driver],
+                *command,
+            ],
+            input=None if sys.stdin.isatty() else sys.stdin.read(),
+            check=False,
+            stdout=None,
+            stderr=None,
+            env={**os.environ, "LIMA_HOME": str(Configuration().lima_home)},
+            cwd="/",
+        )
