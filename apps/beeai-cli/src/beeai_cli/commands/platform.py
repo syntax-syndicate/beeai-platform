@@ -641,6 +641,25 @@ async def start(
             cwd="/",
         )
 
+        await run_command(
+            [
+                *{
+                    VMDriver.lima: [_limactl_exe(), "shell", "--tty=false", vm_name, "--"],
+                    VMDriver.docker: ["docker", "exec", "-i", vm_name],
+                    VMDriver.wsl: ["wsl.exe", "--user", "root", "--distribution", vm_name, "--"],
+                }[vm_driver],
+                "kubectl",
+                "wait",
+                "--for=condition=Available",
+                "--timeout=1h",
+                "--all",
+                "deployment",
+            ],
+            "Waiting for deployments to be available",
+            env={"LIMA_HOME": str(Configuration().lima_home)},
+            cwd="/",
+        )
+
         with console.status("Waiting for BeeAI platform to be ready...", spinner="dots"):
             await wait_for_api()
 
