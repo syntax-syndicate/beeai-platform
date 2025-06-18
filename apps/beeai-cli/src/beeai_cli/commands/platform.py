@@ -834,7 +834,7 @@ async def exec(
     verbose: typing.Annotated[bool, typer.Option("-v", help="Show verbose output")] = False,
 ):
     """For debugging -- execute a command inside the BeeAI platform VM."""
-    with verbosity(verbose):
+    with verbosity(verbose, show_success_status=False):
         command = command or ["/bin/sh"]
         vm_driver = await _validate_driver(vm_driver)
         status = await _get_platform_status(vm_driver, vm_name)
