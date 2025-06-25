@@ -20,6 +20,7 @@ import type { components } from '#api/schema.js';
 import { SupportedUis } from '#modules/runs/constants.ts';
 import { compareStrings, isNotNull } from '#utils/helpers.ts';
 
+import type { UiType } from './api/types';
 import { type Agent, LinkType } from './api/types';
 
 export const getAgentsProgrammingLanguages = (agents: Agent[] | undefined) =>
@@ -52,7 +53,7 @@ export function sortAgentsByName(a: Agent, b: Agent) {
 export function isAgentUiSupported(agent: Agent) {
   const { ui_type } = getAgentUiMetadata(agent);
 
-  return ui_type && SupportedUis.includes(ui_type);
+  return ui_type && SupportedUis.includes(ui_type as UiType);
 }
 
 type AgentLinkType = components['schemas']['LinkType'];
