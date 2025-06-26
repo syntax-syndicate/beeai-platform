@@ -23,6 +23,7 @@ import { prepareMessageFiles } from '#modules/runs/files/utils.ts';
 import { useRunAgent } from '#modules/runs/hooks/useRunAgent.ts';
 import { SourcesProvider } from '#modules/runs/sources/contexts/SourcesProvider.tsx';
 import { extractSources, prepareMessageSources } from '#modules/runs/sources/utils.ts';
+import { prepareTrajectories } from '#modules/runs/trajectory/utils.ts';
 import { Role } from '#modules/runs/types.ts';
 import {
   applyContentTransforms,
@@ -84,7 +85,7 @@ export function ChatProvider({ agent, children }: PropsWithChildren<Props>) {
       }
 
       if (metadata) {
-        processMetadata(metadata);
+        processMetadata(metadata as MessagePartMetadata);
       }
 
       updateLastAssistantMessage((message) => {
@@ -147,7 +148,12 @@ export function ChatProvider({ agent, children }: PropsWithChildren<Props>) {
           });
 
           break;
+        case MetadataKind.Trajectory:
+          updateLastAssistantMessage((message) => {
+            message.trajectories = prepareTrajectories({ trajectories: message.trajectories, data: metadata });
+          });
 
+          break;
         default:
           break;
       }

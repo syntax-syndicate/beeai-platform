@@ -19,6 +19,7 @@ import { FileCard } from '../files/components/FileCard';
 import { FileCardsList } from '../files/components/FileCardsList';
 import { SourcesButton } from '../sources/components/SourcesButton';
 import { useSources } from '../sources/contexts';
+import { TrajectoryView } from '../trajectory/components/TrajectoryView';
 import { Role } from '../types';
 import classes from './Message.module.scss';
 import { type ChatMessage, MessageStatus } from './types';
@@ -45,9 +46,12 @@ export function Message({ message }: Props) {
 
   const files = message.files ?? [];
   const sources = (isAssistantMessage ? message.sources : null) ?? [];
+  const trajectories = (isAssistantMessage ? message.trajectories : null) ?? [];
 
   const hasFiles = files.length > 0;
   const hasSources = isAssistantMessage && sources.length > 0;
+  const hasTrajectories = trajectories.length > 0;
+
   const isSourcesActive = sourcesPanelOpen && activeMessageKey === key;
 
   const handleSourcesButtonClick = useCallback(() => {
@@ -110,6 +114,8 @@ export function Message({ message }: Props) {
         {hasSources && (
           <SourcesButton sources={sources} isActive={isSourcesActive} onClick={handleSourcesButtonClick} />
         )}
+
+        {hasTrajectories && <TrajectoryView trajectories={trajectories} />}
       </div>
     </li>
   );

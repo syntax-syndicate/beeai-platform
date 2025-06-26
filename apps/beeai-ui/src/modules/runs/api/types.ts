@@ -23,11 +23,15 @@ export type CancelRunPath = ApiPath<'/api/v1/acp/runs/{run_id}/cancel', 'post'>;
 
 export type Message = CreateRunRequest['input'][number];
 
-export type MessagePart = Message['parts'][number] & { metadata?: MessagePartMetadata };
+export type MessagePart = Message['parts'][number];
 
-export type MessagePartMetadata = CitationMetadata;
+export type MessagePartMetadata = CitationMetadata | TrajectoryMetadata;
 
 export type Artifact = Exclude<MessagePart, 'name'> & { name: string };
+
+export type RunId = CreateRunResponse['run_id'];
+
+export type SessionId = CreateRunResponse['session_id'];
 
 export interface CitationMetadata {
   kind: MetadataKind.Citation;
@@ -38,12 +42,18 @@ export interface CitationMetadata {
   description: string | null;
 }
 
-export type RunId = CreateRunResponse['run_id'];
-
-export type SessionId = CreateRunResponse['session_id'];
+export interface TrajectoryMetadata {
+  kind: MetadataKind.Trajectory;
+  key: string;
+  message?: string | null;
+  tool_name?: string | null;
+  tool_input?: Record<string, unknown> | null;
+  tool_output?: Record<string, unknown> | null;
+}
 
 export enum MetadataKind {
   Citation = 'citation',
+  Trajectory = 'trajectory',
 }
 
 export enum RunMode {

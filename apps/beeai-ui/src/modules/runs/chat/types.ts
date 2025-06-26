@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type { TrajectoryMetadata } from '../api/types';
 import type { SourceReference } from '../sources/api/types';
 import type { Role } from '../types';
 
@@ -22,6 +23,7 @@ export interface AssistantMessage extends Message {
   contentTransforms: MessageContentTransform[];
   status: MessageStatus;
   sources?: SourceReference[];
+  trajectories?: TrajectoryMetadata[];
 }
 
 export interface MessageFile {

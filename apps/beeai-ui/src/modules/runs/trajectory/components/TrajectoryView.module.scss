@@ -4,6 +4,7 @@
  */
 
 .root {
-  @include hide-popover();
-  margin-block: -$spacing-03;
+  display: flex;
+  flex-direction: column;
+  row-gap: $spacing-03;
 }

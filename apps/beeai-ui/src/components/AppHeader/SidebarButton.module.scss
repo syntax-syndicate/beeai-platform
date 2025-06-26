@@ -11,7 +11,7 @@
 }
 
 .button {
-  @include hidePopover();
+  @include hide-popover();
 }
 
 .label {
