@@ -364,7 +364,7 @@ wheels = [
 
 [[package]]
 name = "beeai-server"
-version = "0.2.8"
+version = "0.2.9"
 source = { editable = "apps/beeai-server" }
 dependencies = [
     { name = "acp-sdk" },
