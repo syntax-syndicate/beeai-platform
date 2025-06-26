@@ -48,6 +48,7 @@ $light: map.merge(
     hero-background: $gray-10,
     expand-button-color: $cool-gray-70,
     file-upload-dropzone-background: rgba($white, 0.95),
+    source-number-active-background: $green-10,
   )
 );
 
@@ -90,6 +91,7 @@ $dark: map.merge(
     hero-background: $layer-01,
     expand-button-color: $cool-gray-30,
     file-upload-dropzone-background: rgba($black, 0.95),
+    source-number-active-background: $green-70,
   )
 );
 
@@ -205,6 +207,7 @@ $modal-background: var(--cds-modal-background);
 $hero-background: var(--cds-hero-background);
 $expand-button-color: var(--cds-expand-button-color);
 $file-upload-dropzone-background: var(--cds-file-upload-dropzone-background);
+$source-number-active-background: var(--cds-source-number-active-background);
 
 $letter-spacing: 0.16px;
 $letter-spacing-lg: 0.32px;
