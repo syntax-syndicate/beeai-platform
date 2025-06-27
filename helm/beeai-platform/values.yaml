@@ -304,3 +304,24 @@ externalS3:
   protocol: "https"
   bucket: "beeai-files"
   region: "us-east-1"
+
+docling:
+  enabled: false
+  podAnnotations: { }
+  podSecurityContext: { }
+  podLabels: { }
+  resources: { }
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: http
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: http
+  ui:
+    enabled: true
+  service:
+    port: 15001
+  imagePullPolicy: IfNotPresent
+  image: "ghcr.io/docling-project/docling-serve-cpu"
