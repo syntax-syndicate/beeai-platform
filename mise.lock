@@ -1,3 +1,7 @@
+[tools."asdf:CrouchingMuppet/asdf-lima"]
+version = "1.1.1"
+backend = "asdf:CrouchingMuppet/asdf-lima"
+
 [tools.fd]
 version = "10.2.0"
 backend = "aqua:sharkdp/fd"
