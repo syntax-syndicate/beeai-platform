@@ -96,6 +96,9 @@ outputs = { auto = true }
 [tasks."version:check"]
 dir = "{{config_root}}"
 run = """
+#!/bin/bash
+set -e -o pipefail
+
 helm_version=$(yq -r .version helm/Chart.yaml)
 helm_app_version=$(yq -r .appVersion helm/Chart.yaml)
 beeai_cli_version=$(yq -r .project.version apps/beeai-cli/pyproject.toml)
