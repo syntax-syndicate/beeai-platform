@@ -31,6 +31,11 @@ jobs:
           file: ./apps/beeai-web/Dockerfile
           push: true
           tags: ghcr.io/${{ github.repository }}/beeai-web:${{ github.sha }},ghcr.io/${{ github.repository }}/beeai-web:latest
+
+  deploy:
+    needs: publish
+    runs-on: [self-hosted]
+    steps:
       - uses: azure/setup-kubectl@v4
       - run: kubectl set image deployment/beeai-web beeai-web=ghcr.io/${{ github.repository }}/beeai-web:${{ github.sha }} -n ${{ secrets.CLUSTER_NAMESPACE }}
       - run: kubectl rollout status deployment/beeai-web --timeout 5m -n ${{ secrets.CLUSTER_NAMESPACE }}
