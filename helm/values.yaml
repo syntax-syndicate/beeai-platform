@@ -152,7 +152,7 @@ agent:
   podAnnotations: { }
   deploymentStrategy: RollingUpdate
   deploymentAnnotations: { }
-  imagePullPolicy: ""
+  imagePullPolicy: IfNotPresent
   podLabels: { }
   resources: { }
   securityContext: { }
