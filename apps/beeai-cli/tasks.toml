@@ -87,7 +87,7 @@ rm -rf ./dist
 uv build -q --out-dir ./dist
 
 export lima_version=$(yq -r '.tools["asdf:CrouchingMuppet/asdf-lima"]' ../../mise.toml)
-export version="$(yq -o toml .project.version pyproject.toml)"
+export version="$(yq -o toml .project.version pyproject.toml | tr -d -)"
 export universal_wheel=$(realpath "./dist/beeai_cli-$version-py3-none-any.whl")
 
 build_wheel() {
