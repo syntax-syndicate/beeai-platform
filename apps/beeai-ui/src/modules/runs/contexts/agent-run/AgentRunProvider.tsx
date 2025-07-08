@@ -5,13 +5,14 @@
 
 import type { MessagePart } from 'acp-sdk';
 import isString from 'lodash/isString';
-import type { PropsWithChildren } from 'react';
-import { useCallback, useEffect, useMemo } from 'react';
+import { type PropsWithChildren, useCallback, useMemo, useState } from 'react';
 import { v4 as uuid } from 'uuid';
 
+import { getErrorCode } from '#api/utils.ts';
+import { useHandleError } from '#hooks/useHandleError.ts';
 import { useImmerWithGetter } from '#hooks/useImmerWithGetter.ts';
-import { usePrevious } from '#hooks/usePrevious.ts';
 import type { Agent } from '#modules/agents/api/types.ts';
+import type { TrajectoryMetadata } from '#modules/runs/api/types.ts';
 import {
   type AgentMessage,
   type ChatMessage,
@@ -23,8 +24,8 @@ import { prepareMessageFiles } from '#modules/runs/files/utils.ts';
 import { useRunAgent } from '#modules/runs/hooks/useRunAgent.ts';
 import { SourcesProvider } from '#modules/runs/sources/contexts/SourcesProvider.tsx';
 import { extractSources, prepareMessageSources } from '#modules/runs/sources/utils.ts';
-import { prepareTrajectories } from '#modules/runs/trajectory/utils.ts';
-import { Role } from '#modules/runs/types.ts';
+import { createTrajectoryMetadata, prepareTrajectories } from '#modules/runs/trajectory/utils.ts';
+import { Role, type RunStats } from '#modules/runs/types.ts';
 import {
   applyContentTransforms,
   createCitationTransform,
@@ -39,8 +40,9 @@ import {
 import { isImageContentType } from '#utils/helpers.ts';
 
 import { useFileUpload } from '../../files/contexts';
-import { AgentProvider } from '../agent/AgentProvider';
-import { ChatContext, ChatMessagesContext } from './chat-context';
+import { AgentStatusProvider } from '../agent-status/AgentStatusProvider';
+import { MessagesProvider } from '../messages/MessagesProvider';
+import { AgentRunContext } from './agent-run-context';
 
 type MessagePartMetadata = NonNullable<MessagePart['metadata']>;
 
@@ -48,11 +50,17 @@ interface Props {
   agent: Agent;
 }
 
-export function ChatProvider({ agent, children }: PropsWithChildren<Props>) {
-  const [messages, , setMessages] = useImmerWithGetter<ChatMessage[]>([]);
+export function AgentRunProvider({ agent, children }: PropsWithChildren<Props>) {
+  const [messages, getMessages, setMessages] = useImmerWithGetter<ChatMessage[]>([]);
+  const [stats, setStats] = useState<RunStats>();
+
+  const errorHandler = useHandleError();
 
   const { files, clearFiles } = useFileUpload();
-  const { isPending, runAgent, stopAgent, reset } = useRunAgent({
+  const { input, isPending, runAgent, stopAgent, reset } = useRunAgent({
+    onBeforeRun: () => {
+      setStats({ startTime: Date.now() });
+    },
     onMessagePart: (event) => {
       const { part } = event;
       const { content, content_type, content_url, metadata } = part;
@@ -64,20 +72,20 @@ export function ChatProvider({ agent, children }: PropsWithChildren<Props>) {
 
       if (isArtifact) {
         if (hasFile) {
-          updateLastAssistantMessage((message) => {
+          updateLastAgentMessage((message) => {
             message.files = prepareMessageFiles({ files: message.files, data: part });
           });
         }
       }
 
       if (hasContent) {
-        updateLastAssistantMessage((message) => {
+        updateLastAgentMessage((message) => {
           message.rawContent += content;
         });
       }
 
       if (hasImage) {
-        updateLastAssistantMessage((message) => {
+        updateLastAgentMessage((message) => {
           message.contentTransforms.push(
             createImageTransform({
               imageUrl: content_url,
@@ -91,31 +99,54 @@ export function ChatProvider({ agent, children }: PropsWithChildren<Props>) {
         processMetadata(metadata as MessagePartMetadata);
       }
 
-      updateLastAssistantMessage((message) => {
+      updateLastAgentMessage((message) => {
         message.content = applyContentTransforms({
           rawContent: message.rawContent,
           transforms: message.contentTransforms,
         });
       });
     },
+    onGeneric: (event) => {
+      const metadata = createTrajectoryMetadata(event.generic);
+
+      if (metadata) {
+        processMetadata(metadata as TrajectoryMetadata);
+      }
+    },
     onMessageCompleted: () => {
-      updateLastAssistantMessage((message) => {
+      updateLastAgentMessage((message) => {
         message.status = MessageStatus.Completed;
       });
     },
     onStop: () => {
-      updateLastAssistantMessage((message) => {
+      updateLastAgentMessage((message) => {
         message.status = MessageStatus.Aborted;
       });
     },
+    onDone: () => {
+      handleDone();
+    },
     onRunFailed: (event) => {
-      handleError(event.run.error);
+      const { error } = event.run;
+
+      handleError(error);
+
+      if (error) {
+        updateLastAgentMessage((message) => {
+          message.error = error;
+          message.status = MessageStatus.Failed;
+        });
+
+        const metadata = createTrajectoryMetadata({ message: error.message });
+
+        if (metadata) {
+          processMetadata(metadata as TrajectoryMetadata);
+        }
+      }
     },
   });
 
-  const sourcesData = useMemo(() => extractSources(messages), [messages]);
-
-  const updateLastAssistantMessage = useCallback(
+  const updateLastAgentMessage = useCallback(
     (updater: (message: AgentMessage) => void) => {
       setMessages((messages) => {
         const lastMessage = messages.at(-1);
@@ -132,7 +163,7 @@ export function ChatProvider({ agent, children }: PropsWithChildren<Props>) {
     (metadata: MessagePartMetadata) => {
       switch (metadata.kind) {
         case 'citation':
-          updateLastAssistantMessage((message) => {
+          updateLastAgentMessage((message) => {
             const { sources, newSource } = prepareMessageSources({ message, metadata });
 
             message.sources = sources;
@@ -156,31 +187,43 @@ export function ChatProvider({ agent, children }: PropsWithChildren<Props>) {
 
           break;
         case 'trajectory':
-          updateLastAssistantMessage((message) => {
+          updateLastAgentMessage((message) => {
             message.trajectories = prepareTrajectories({ trajectories: message.trajectories, data: metadata });
           });
 
           break;
-        default:
-          break;
       }
     },
-    [updateLastAssistantMessage],
+    [updateLastAgentMessage],
   );
+
+  const handleDone = useCallback(() => {
+    setStats((stats) => ({ ...stats, endTime: Date.now() }));
+  }, []);
 
   const handleError = useCallback(
     (error: unknown) => {
-      if (error) {
-        updateLastAssistantMessage((message) => {
-          message.error = error;
-          message.status = MessageStatus.Failed;
-        });
-      }
+      const errorCode = getErrorCode(error);
+
+      errorHandler(error, {
+        errorToast: { title: errorCode?.toString() ?? 'Failed to run agent.', includeErrorMessage: true },
+      });
     },
-    [updateLastAssistantMessage],
+    [errorHandler],
   );
 
-  const sendMessage = useCallback(
+  const cancel = useCallback(() => {
+    stopAgent();
+  }, [stopAgent]);
+
+  const clear = useCallback(() => {
+    reset();
+    setMessages([]);
+    setStats(undefined);
+    clearFiles();
+  }, [reset, setMessages, clearFiles]);
+
+  const run = useCallback(
     async (input: string) => {
       const uploadFiles = extractValidUploadFiles(files);
       const messageParts = [createMessagePart({ content: input }), ...createFileMessageParts(uploadFiles)];
@@ -211,42 +254,31 @@ export function ChatProvider({ agent, children }: PropsWithChildren<Props>) {
         handleError(error);
       }
     },
-    [agent, files, runAgent, setMessages, handleError, clearFiles],
+    [agent, files, setMessages, clearFiles, runAgent, handleError],
   );
 
-  const handleClear = useCallback(() => {
-    reset();
-    setMessages([]);
-    clearFiles();
-  }, [reset, setMessages, clearFiles]);
-
-  const previousAgent = usePrevious(agent);
-  useEffect(() => {
-    if (agent !== previousAgent) {
-      handleClear();
-    }
-  }, [handleClear, agent, previousAgent]);
+  const sourcesData = useMemo(() => extractSources(messages), [messages]);
 
   const contextValue = useMemo(
     () => ({
       agent,
       isPending,
-      onCancel: stopAgent,
-      onClear: handleClear,
-      sendMessage,
+      input,
+      stats,
+      run,
+      cancel,
+      clear,
     }),
-    [agent, isPending, stopAgent, handleClear, sendMessage],
+    [agent, isPending, input, stats, run, cancel, clear],
   );
 
   return (
-    <SourcesProvider sourcesData={sourcesData}>
-      <ChatContext.Provider value={contextValue}>
-        <ChatMessagesContext.Provider value={messages}>
-          <AgentProvider agent={agent} isMonitorStatusEnabled={isPending}>
-            {children}
-          </AgentProvider>
-        </ChatMessagesContext.Provider>
-      </ChatContext.Provider>
-    </SourcesProvider>
+    <AgentStatusProvider agent={agent} isMonitorStatusEnabled>
+      <SourcesProvider sourcesData={sourcesData}>
+        <MessagesProvider messages={getMessages()}>
+          <AgentRunContext.Provider value={contextValue}>{children}</AgentRunContext.Provider>
+        </MessagesProvider>
+      </SourcesProvider>
+    </AgentStatusProvider>
   );
 }
