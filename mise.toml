@@ -16,7 +16,7 @@ kubeconform = "latest"
 "ubi:telepresenceio/telepresence" = "latest"
 
 # Misc
-yq = "latest"
+dasel = "latest"
 fd = "latest"
 "ubi:google/addlicense" = "latest"
 
@@ -99,12 +99,12 @@ run = """
 #!/bin/bash
 set -e -o pipefail
 
-helm_version=$(yq -r .version helm/Chart.yaml)
-helm_app_version=$(yq -r .appVersion helm/Chart.yaml)
-beeai_cli_version=$(yq -r .project.version apps/beeai-cli/pyproject.toml)
-beeai_server_version=$(yq -r .project.version apps/beeai-server/pyproject.toml)
-beeai_ui_version=$(yq -r .version apps/beeai-ui/package.json)
-beeai_web_version=$(yq -r .version apps/beeai-web/package.json)
+helm_version=$(dasel -w plain -f helm/Chart.yaml '.version')
+helm_app_version=$(dasel -w plain -f helm/Chart.yaml '.appVersion')
+beeai_cli_version=$(dasel -w plain -f apps/beeai-cli/pyproject.toml '.project.version')
+beeai_server_version=$(dasel -w plain -f apps/beeai-server/pyproject.toml '.project.version')
+beeai_ui_version=$(dasel -w plain -f apps/beeai-ui/package.json '.version')
+beeai_web_version=$(dasel -w plain -f apps/beeai-web/package.json '.version')
 
 if [ "$helm_version" != "$helm_app_version" ] || \
    [ "$helm_version" != "$beeai_cli_version" ] || \
@@ -147,15 +147,26 @@ if [[ -n "$(git status --porcelain)" ]]; then
   exit 1
 fi
 
-# Prompt for version bump
-read -p "Bump from $(yq -r .version helm/Chart.yaml) to: " new_version
+# Prompt for version bump with validation
+current_version=$(dasel -f helm/Chart.yaml -r yaml -s '.version')
+while true; do
+  read -p "Bump from ${current_version} to: " new_version
+  if [[ "$new_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$ ]]; then
+    break
+  else
+    echo "ERROR: Invalid version format. Use #.#.# or #.#.#-rc#"
+  fi
+done
 
 # Update all version fields
-yq -i ".version = \"$new_version\" | .appVersion = \"$new_version\"" helm/Chart.yaml
-perl -pi -e "s/^(version\\s*=\\s*\")[^\"]*(\")/\${1}$new_version\${2}/" apps/beeai-cli/pyproject.toml
-perl -pi -e "s/^(version\\s*=\\s*\")[^\"]*(\")/\${1}$new_version\${2}/" apps/beeai-server/pyproject.toml
-yq -i ".version = \"$new_version\"" apps/beeai-ui/package.json
-yq -i ".version = \"$new_version\"" apps/beeai-web/package.json
+dasel put -f helm/Chart.yaml -r yaml -t string -v "$new_version" '.version'
+dasel put -f helm/Chart.yaml -r yaml -t string -v "$new_version" '.appVersion'
+dasel put -f apps/beeai-cli/pyproject.toml -r toml -t string -v "$new_version" '.project.version'
+dasel put -f apps/beeai-server/pyproject.toml -r toml -t string -v "$new_version" '.project.version'
+dasel put -f apps/beeai-ui/package.json -r json -t string -v "$new_version" '.version'
+dasel put -f apps/beeai-web/package.json -r json -t string -v "$new_version" '.version'
+
+# Update lockfile with new version
 uv lock
 
 # Confirm commit and push (default: yes)

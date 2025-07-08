@@ -2,6 +2,13 @@
 version = "1.1.1"
 backend = "asdf:CrouchingMuppet/asdf-lima"
 
+[tools.dasel]
+version = "2.8.1"
+backend = "aqua:TomWright/dasel"
+
+[tools.dasel.checksums]
+dasel_darwin_amd64 = "sha256:be3cc4bcc2272873a071db5dcbfee2a81ad73cba3750476ee91f3fd554fb5d76"
+
 [tools.fd]
 version = "10.2.0"
 backend = "aqua:sharkdp/fd"
@@ -68,11 +75,3 @@ backend = "aqua:astral-sh/uv"
 
 [tools.uv.checksums]
 "uv-aarch64-apple-darwin.tar.gz" = "sha256:698d24883fd441960fb4bc153b7030b89517a295502017ff3fdbba2fb0a0aa67"
-
-[tools.yq]
-version = "4.45.4"
-backend = "aqua:mikefarah/yq"
-
-[tools.yq.checksums]
-yq_darwin_amd64 = "sha256:5580ff2c1fc80dd91f248b3e19af2431f1c95767ad0949a60176601ca5140318"
-yq_darwin_arm64 = "sha256:602dbbc116af9eb8a91d2239d0ec286eb9c90b94e76676d5268ab6ca184719b6"
