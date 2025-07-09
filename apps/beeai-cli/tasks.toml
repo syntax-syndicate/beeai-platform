@@ -57,7 +57,7 @@ run = "uv run beeai"
 dir = "{{config_root}}/apps/beeai-cli"
 run = '''
 set -e
-LIMA_VERSION=$(dasel -f ../../mise.toml -w plain '.tools.property(asdf:CrouchingMuppet/asdf-lima)')
+LIMA_VERSION=$(yq -r '.tools["asdf:CrouchingMuppet/asdf-lima"]' ../../mise.toml)
 mkdir -p ./vendor
 echo '*' >./vendor/.gitignore
 ( test -f ./vendor/lima-$LIMA_VERSION/manylinux_2_28_x86_64/bin/limactl  || ( mkdir -p ./vendor/lima-$LIMA_VERSION/manylinux_2_28_x86_64  && curl -fsL -H "Authorization: Bearer $GITHUB_TOKEN" https://github.com/lima-vm/lima/releases/download/v${LIMA_VERSION}/lima-${LIMA_VERSION}-Linux-x86_64.tar.gz  | tar -xzf - -C ./vendor/lima-$LIMA_VERSION/manylinux_2_28_x86_64  )) &
@@ -86,8 +86,8 @@ set -euo pipefail
 rm -rf ./dist
 uv build -q --out-dir ./dist
 
-export lima_version=$(dasel -w plain -f ../../mise.toml '.tools.property(asdf:CrouchingMuppet/asdf-lima)')
-export version="$(dasel -w plain -f pyproject.toml '.project.version' | tr -d -)"
+export lima_version=$(yq -r '.tools["asdf:CrouchingMuppet/asdf-lima"]' ../../mise.toml)
+export version="$(yq -r '.project.version' pyproject.toml | tr -d -)"
 export universal_wheel=$(realpath "./dist/beeai_cli-$version-py3-none-any.whl")
 
 build_wheel() {
