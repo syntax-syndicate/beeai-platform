@@ -139,6 +139,7 @@ async def create_chat_completion(env_service: EnvServiceDependency, request: Cha
                 "top_p": request.top_p,
                 "presence_penalty": request.presence_penalty,
                 "frequency_penalty": request.frequency_penalty,
+                "response_format": request.response_format,
             },
         )
 
