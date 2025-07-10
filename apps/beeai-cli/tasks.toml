@@ -110,6 +110,12 @@ insert_line=$(awk '/^Requires-Dist:/ {print FNR-1; exit}' "$tmpdir/beeai_cli-${v
 mv "$tmpdir/beeai_cli-${version}.dist-info/METADATA.new" "$tmpdir/beeai_cli-${version}.dist-info/METADATA"
 (cd "$tmpdir" && zip -q "$universal_wheel" "beeai_cli-${version}.dist-info/METADATA")
 
+# Verify that the wheel works
+if [[ "$(uv tool run --quiet --isolated --with "$universal_wheel" -- beeai version)" != "beeai-cli version: $version" ]]; then
+  echo "Failed to install $universal_wheel"
+  exit 1
+fi
+
 # Make platform-specific wheels by bundling limactl
 build_wheel() {
   wheel_tag="$1"
