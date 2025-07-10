@@ -73,7 +73,7 @@ wheels = [
 
 [[package]]
 name = "beeai-cli"
-version = "0.2.15rc4"
+version = "0.2.15rc5"
 source = { editable = "." }
 dependencies = [
     { name = "acp-sdk" },
