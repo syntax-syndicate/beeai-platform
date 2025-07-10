@@ -101,7 +101,7 @@ run = "addlicense -check -l apache -s=only -c '© BeeAI a Series of LF Projects,
 
 [tasks."common:check:version"]
 dir = "{{config_root}}"
-run = """
+run = '''
 #!/bin/bash
 set -e -o pipefail
 
@@ -127,11 +127,16 @@ if [ "$helm_version" != "$helm_app_version" ] || \
   exit 1
 fi
 
+if ! [[ "$helm_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$ ]]; then
+  echo "ERROR: Invalid version format. Use #.#.# or #.#.#-rc#"
+  exit 1
+fi
+
 if [[ "$GITHUB_REF" == refs/tags/v* && "$GITHUB_REF" != "refs/tags/v$helm_version" ]]; then
   echo "GITHUB_REF '$GITHUB_REF' does not match expected 'refs/tags/v$helm_version'"
   exit 1
 fi
-"""
+'''
 
 ### fix
 
@@ -177,6 +182,7 @@ while true; do
     break
   else
     echo "ERROR: Invalid version format. Use #.#.# or #.#.#-rc#"
+    exit 1
   fi
 done
 
