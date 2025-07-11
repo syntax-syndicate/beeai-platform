@@ -38,7 +38,7 @@ async def build(
     context: typing.Annotated[str, typer.Argument(help="Docker context for the agent")] = ".",
     tag: typing.Annotated[str | None, typer.Option(help="Docker tag for the agent")] = None,
     multi_platform: bool | None = False,
-    push: typing.Annotated[bool, typer.Argument(help="Push the image to the target registry.")] = False,
+    push: typing.Annotated[bool, typer.Option(help="Push the image to the target registry.")] = False,
     import_image: typing.Annotated[
         bool, typer.Option("--import/--no-import", is_flag=True, help="Import the image into BeeAI platform")
     ] = True,
