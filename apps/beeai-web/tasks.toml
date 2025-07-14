@@ -78,15 +78,15 @@ run = "pnpm dev"
 depends = ["common:setup:pnpm"]
 dir = "{{config_root}}/apps/beeai-web"
 run = "pnpm build"
-sources = ["*.json", "*.js", "index.html", "src/**/*.tsx", "src/**/*.ts"]
+sources = ["*.json", "*.js", "src/**/*.tsx", "src/**/*.ts"]
 outputs = { auto = true }
 
 # preview
 
-["beeai-web:preview"]
+["beeai-web:start"]
 depends = ["common:setup:pnpm"]
 dir = "{{config_root}}/apps/beeai-web"
-run = "pnpm preview"
+run = "pnpm start"
 
 # clean
 
