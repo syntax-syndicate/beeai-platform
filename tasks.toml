@@ -81,3 +81,74 @@ export PS1="(${VM_NAME}) ${__OLD_PS1}"
 
 """
 
+
+["beeai-platform:release"]
+description = "Bump version across all platform components and sync dependencies"
+usage = '''
+arg "version" "must follow pattern 1.2.3[-rc4]"
+'''
+
+run = """
+#!/bin/bash
+set -e
+
+# Get the new version from argument
+NEW_VERSION="{{arg(name='version')}}"
+
+# Validate version format
+if ! [[ "$NEW_VERSION" =~ ^[0-9]+\\.[0-9]+\\.[0-9]+(-rc[0-9]+)?$ ]]; then
+    echo "ERROR: Invalid version format. Use #.#.# or #.#.#-rc#"
+    echo "Examples: 1.2.3, 0.2.15-rc6"
+    exit 1
+fi
+
+echo "Bumping version to $NEW_VERSION"
+
+# Python projects - using toml set to preserve version format
+echo "Updating Python projects..."
+cd apps/beeai-cli && toml set 'project.version' "$NEW_VERSION" --toml-path pyproject.toml && uv lock
+cd ../beeai-server && toml set 'project.version' "$NEW_VERSION" --toml-path pyproject.toml && uv lock
+cd ../../
+
+# Node.js projects - using npm to update package.json files
+echo "Updating Node.js projects..."
+cd apps/beeai-ui && npm version "$NEW_VERSION" --no-git-tag-version
+cd ../beeai-web && npm version "$NEW_VERSION" --no-git-tag-version
+cd ../../
+
+# Update Helm Chart using yq (multi-platform)
+echo "Updating Helm chart..."
+yq -i ".version = \\"$NEW_VERSION\\"" helm/Chart.yaml
+yq -i ".appVersion = \\"$NEW_VERSION\\"" helm/Chart.yaml
+
+# Sync dependencies using mise tasks
+echo "Syncing dependencies..."
+{{ mise_bin }} run beeai-cli:setup
+{{ mise_bin }} run beeai-server:setup
+{{ mise_bin }} run common:setup:pnpm
+
+echo "Version bump to $NEW_VERSION completed successfully!"
+echo "Dependencies synchronized for all projects."
+
+# Add files to git staging
+git add helm/Chart.yaml apps/beeai-{cli,server}/{uv.lock,pyproject.toml} apps/beeai-{ui,web}/package.json
+
+echo ""
+echo "Changes made:"
+git diff --cached
+
+# Ask user if they want to commit and push
+read -p "Create commit and push to main? [Y/n] " confirm
+if [[ "${confirm:-y}" =~ ^[Yy]$ ]]; then
+    git commit -m "release: v$NEW_VERSION"
+    git tag "v$NEW_VERSION"
+    git push --atomic origin main "v$NEW_VERSION"
+    echo "Successfully committed and pushed version v$NEW_VERSION"
+else
+    echo "Changes staged but not committed. You can commit manually with:"
+    echo "  git commit -m 'release: v$NEW_VERSION'"
+    echo "  git tag 'v$NEW_VERSION'"
+    echo "  git push --atomic origin main 'v$NEW_VERSION'"
+fi
+
+"""

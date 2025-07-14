@@ -214,3 +214,16 @@ mise beeai-ui:run
 # UI is also available from beeai-server (in static mode):
 mise beeai-server:run
 ```
+
+## Releasing
+
+> ⚠️ **IMPORTANT**   
+> Always create pre-release before the actual public release and check that the upgrade and installation work.
+
+Use the release script:
+
+```shell
+mise run beeai-platform:release 0.2.15-rc6
+
+```
+
