@@ -10,7 +10,6 @@ import beeai_cli.commands.env
 import beeai_cli.commands.platform
 from beeai_cli.async_typer import AsyncTyper
 from beeai_cli.configuration import Configuration
-from beeai_cli.utils import launch_graphical_interface
 
 logging.basicConfig(level=logging.INFO if Configuration().debug else logging.FATAL)
 
@@ -36,21 +35,25 @@ def show_version():
     print("beeai-cli version:", version("beeai-cli"))
 
 
+async def _launch_graphical_interface(host_url: str):
+    import webbrowser
+
+    import beeai_cli.commands.env
+
+    await beeai_cli.commands.env.ensure_llm_env()
+    webbrowser.open(host_url)
+
+
 @app.command("ui")
 async def ui():
-    """Launch graphical interface."""
-    ui_url = str(Configuration().ui_url)
-
-    await launch_graphical_interface(ui_url)
+    """Launch the graphical interface."""
+    await _launch_graphical_interface(str(Configuration().ui_url))
 
 
 @app.command("playground")
 async def playground() -> None:
     """Launch the graphical interface for the compose playground."""
-    config = Configuration()
-    host_url = str(config.host) + str(config.playground)
-
-    await launch_graphical_interface(host_url)
+    await _launch_graphical_interface(str(Configuration().ui_url) + Configuration().playground)
 
 
 if __name__ == "__main__":
