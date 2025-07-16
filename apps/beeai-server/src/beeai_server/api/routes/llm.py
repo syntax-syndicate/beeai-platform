@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import json
-import re
 from collections.abc import AsyncGenerator, Generator
 from typing import Any, Literal
 
@@ -11,9 +10,9 @@ import ibm_watsonx_ai
 import ibm_watsonx_ai.foundation_models
 import openai
 import openai.types.chat
+import pydantic
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, SkipValidation
 
 from beeai_server.api.dependencies import EnvServiceDependency
 
@@ -22,13 +21,13 @@ router = fastapi.APIRouter()
 BEEAI_PROXY_VERSION = 1
 
 
-class ChatCompletionRequest(BaseModel):
+class ChatCompletionRequest(pydantic.BaseModel):
     """
     Corresponds to args to OpenAI `client.chat.completions.create(...)`
     """
 
     messages: list[
-        SkipValidation[openai.types.chat.ChatCompletionMessageParam]
+        pydantic.SkipValidation[openai.types.chat.ChatCompletionMessageParam]
     ]  # SkipValidation to avoid https://github.com/pydantic/pydantic/issues/9467
     model: str | openai.types.ChatModel
     audio: openai.types.chat.ChatCompletionAudioParam | None = None
@@ -66,10 +65,7 @@ class ChatCompletionRequest(BaseModel):
 async def create_chat_completion(env_service: EnvServiceDependency, request: ChatCompletionRequest):
     env = await env_service.list_env()
 
-    is_rits = re.match(r"^https://[a-z0-9.-]+\.rits\.fmaas\.res\.ibm.com/.*$", env["LLM_API_BASE"])
-    is_watsonx = re.match(r"^https://[a-z0-9.-]+\.ml\.cloud\.ibm\.com/.*?$", env["LLM_API_BASE"])
-
-    if is_watsonx:
+    if pydantic.HttpUrl(env["LLM_API_BASE"]).host.endswith(".ml.cloud.ibm.com"):
         model = ibm_watsonx_ai.foundation_models.ModelInference(
             model_id=env["LLM_MODEL"],
             credentials=ibm_watsonx_ai.Credentials(url=env["LLM_API_BASE"], api_key=env["LLM_API_KEY"]),
@@ -153,7 +149,11 @@ async def create_chat_completion(env_service: EnvServiceDependency, request: Cha
         client = openai.AsyncOpenAI(
             api_key=env["LLM_API_KEY"],
             base_url=env["LLM_API_BASE"],
-            default_headers={"RITS_API_KEY": env["LLM_API_KEY"]} if is_rits else {},
+            default_headers=(
+                {"RITS_API_KEY": env["LLM_API_KEY"]}
+                if pydantic.HttpUrl(env["LLM_API_BASE"]).host.endswith(".rits.fmaas.res.ibm.com")
+                else {}
+            ),
         )
         if request.stream:
             return StreamingResponse(
