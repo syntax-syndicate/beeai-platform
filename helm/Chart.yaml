@@ -3,8 +3,8 @@ name: beeai-platform
 icon: https://raw.githubusercontent.com/i-am-bee/beeai/master/docs/logo/beeai_framework_dark.svg
 description: A Helm chart for Kubernetes
 type: application
-version: 0.2.15-rc6
-appVersion: 0.2.15-rc6
+version: 0.2.15-rc7
+appVersion: 0.2.15-rc7
 dependencies:
   - name: common
     repository: oci://registry-1.docker.io/bitnamicharts
@@ -24,4 +24,3 @@ dependencies:
     alias: phoenix
     repository: oci://registry-1.docker.io/arizephoenix
     version: 2.x.x
-
