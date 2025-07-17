@@ -198,16 +198,21 @@ fi
 current_version=$(yq -r '.version' helm/Chart.yaml)
 
 # Compute suggested next rc version
-if [[ "$current_version" =~ ^([0-9]+\.[0-9]+\.[0-9]+)(-rc([0-9]+))?$ ]]; then
-  suggested_new_version="${BASH_REMATCH[1]}-rc$((${BASH_REMATCH[3]} + 1))"
+if [[ "$current_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(-rc([0-9]+))?$ ]]; then
+  if [[ -n "${BASH_REMATCH[5]}" ]]; then
+    suggested_new_version="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}-rc$((${BASH_REMATCH[5]} + 1))"
+  else
+    suggested_new_version="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.$((${BASH_REMATCH[3]} + 1))-rc1"
+  fi
 else
-  suggested_new_version="${current_version}-rc1"
+  echo "ERROR: Invalid version format of current version. Use #.#.#[-rc#]"
+  exit 1
 fi
 
 # Prompt for new version
 new_version=$(gum input --prompt.foreground="8" --prompt "Bump from ${current_version} -> " --value "$suggested_new_version")
 if [[ ! "$new_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$ ]]; then
-  echo "ERROR: Invalid version format. Use #.#.#[-rc#]"
+  echo "ERROR: Invalid version format of new version. Use #.#.#[-rc#]"
   exit 1
 fi
 
