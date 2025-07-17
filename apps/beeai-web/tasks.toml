@@ -10,10 +10,10 @@ run = "pnpm prettier --log-level silent --check src"
 sources = ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx", "src/**/*.html", "src/**/*.css", "src/**/*.scss"]
 outputs = { auto = true }
 
-["beeai-web:check:eslint"]
+["beeai-web:check:next"]
 depends = ["common:setup:pnpm"]
 dir = "{{config_root}}/apps/beeai-web"
-run = "pnpm eslint src"
+run = "pnpm next lint"
 sources = ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx"]
 outputs = { auto = true }
 
@@ -43,10 +43,10 @@ run = "pnpm prettier --log-level silent --write src"
 sources = ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx", "src/**/*.html", "src/**/*.css", "src/**/*.scss"]
 outputs = { auto = true }
 
-["beeai-web:fix:eslint"]
+["beeai-web:fix:next"]
 depends = ["common:setup:pnpm"]
 dir = "{{config_root}}/apps/beeai-web"
-run = "pnpm eslint --fix src"
+run = "pnpm next lint --fix"
 sources = ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx"]
 outputs = { auto = true }
 
@@ -85,6 +85,3 @@ env.NODE_OPTIONS = "--no-experimental-global-navigator"
 run = "pnpm next build"
 sources = ["*.json", "*.js", "*.mjs", "*.ts", "public/**/*", "src/**/*"]
 outputs = { auto = true }
-
-["beeai-web:build:check"]
-depends = ["beeai-web:check:eslint", "beeai-web:check:tsc"]

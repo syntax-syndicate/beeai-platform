@@ -80,13 +80,6 @@ const nextConfig: NextConfig = {
     // https://github.com/vercel/next.js/issues/64921
     cssChunking: false,
   },
-  // Skip check & lint -- already done by Mise
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
 };
 
 export default nextConfig;
