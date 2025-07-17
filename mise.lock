@@ -10,6 +10,13 @@ backend = "aqua:sharkdp/fd"
 "fd-v10.2.0-aarch64-apple-darwin.tar.gz" = "sha256:ae6327ba8c9a487cd63edd8bddd97da0207887a66d61e067dfe80c1430c5ae36"
 "fd-v10.2.0-x86_64-apple-darwin.tar.gz" = "sha256:991a648a58870230af9547c1ae33e72cb5c5199a622fe5e540e162d6dba82d48"
 
+[tools.gum]
+version = "v0.16.2"
+backend = "aqua:charmbracelet/gum"
+
+[tools.gum.checksums]
+"gum_0.16.2_Darwin_arm64.tar.gz" = "sha256:ee45a15043c33e90ab4902d9bfd9a6ee97ee820869f6de4a1a2e3d3f9636f05f"
+
 [tools.helm]
 version = "3.18.4"
 backend = "aqua:helm/helm"

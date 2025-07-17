@@ -20,6 +20,7 @@ yq = "latest"
 "pipx:toml-cli" = "latest"
 fd = "latest"
 "ubi:google/addlicense" = "latest"
+gum = "latest"
 
 [settings]
 experimental = true # for python.uv_venv_auto

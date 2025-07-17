@@ -213,17 +213,21 @@ if [[ -n "$(git status --porcelain)" ]]; then
   exit 1
 fi
 
-# Prompt for version bump with validation
 current_version=$(yq -r '.version' helm/Chart.yaml)
-while true; do
-  read -p "Bump from ${current_version} to: " new_version
-  if [[ "$new_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$ ]]; then
-    break
-  else
-    echo "ERROR: Invalid version format. Use #.#.# or #.#.#-rc#"
-    exit 1
-  fi
-done
+
+# Compute suggested next rc version
+if [[ "$current_version" =~ ^([0-9]+\.[0-9]+\.[0-9]+)(-rc([0-9]+))?$ ]]; then
+  suggested_new_version="${BASH_REMATCH[1]}-rc$((${BASH_REMATCH[3]} + 1))"
+else
+  suggested_new_version="${current_version}-rc1"
+fi
+
+# Prompt for new version
+new_version=$(gum input --prompt.foreground="8" --prompt "Bump from ${current_version} -> " --value "$suggested_new_version")
+if [[ ! "$new_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$ ]]; then
+  echo "ERROR: Invalid version format. Use #.#.#[-rc#]"
+  exit 1
+fi
 
 # Update all version fields
 yq -i ".version = \"$new_version\"" helm/Chart.yaml
@@ -233,9 +237,8 @@ yq -i ".appVersion = \"$new_version\"" helm/Chart.yaml
 yq -i ".version = \"$new_version\"" apps/beeai-ui/package.json
 yq -i ".version = \"$new_version\"" apps/beeai-web/package.json
 
-# Confirm commit and push (default: yes)
-read -p "Commit and push? [Y/n] " confirm
-if [[ "${confirm:-y}" =~ ^[Yy]$ ]]; then
+# Confirm commit and push
+if gum confirm "Release version $new_version now?"; then
   (
     set -eux -o pipefail
     git add helm/Chart.yaml apps/beeai-{cli,server}/{uv.lock,pyproject.toml} apps/beeai-{ui,web}/package.json
@@ -243,5 +246,12 @@ if [[ "${confirm:-y}" =~ ^[Yy]$ ]]; then
     git tag "v$new_version"
     git push --atomic origin main "v$new_version"
   )
+fi
+
+# Follow GitHub Action run
+if gum confirm "Follow GitHub Action? (Requires `gh` CLI.)"; then
+  gum spin --title="Waiting for GitHub Action to start..." sleep 10
+  run_id=$(gh run list --workflow=Release --branch=v$new_version --limit=1 --json databaseId,status -q '.[0].databaseId')
+  gh run watch $run_id
 fi
 '''
