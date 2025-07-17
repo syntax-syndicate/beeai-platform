@@ -3,13 +3,6 @@
 ["beeai-web:check"]
 depends = ["beeai-web:check:*"]
 
-["beeai-web:check:next"]
-depends = ["common:setup:pnpm"]
-dir = "{{config_root}}/apps/beeai-web"
-run = "pnpm next lint"
-sources = ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx"]
-outputs = { auto = true }
-
 ["beeai-web:check:prettier"]
 depends = ["common:setup:pnpm"]
 dir = "{{config_root}}/apps/beeai-web"
@@ -25,7 +18,7 @@ sources = ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx"]
 outputs = { auto = true }
 
 ["beeai-web:check:tsc"]
-depends = ["common:setup:pnpm", "beeai-web:check:next"]
+depends = ["common:setup:pnpm"]
 dir = "{{config_root}}/apps/beeai-web"
 run = "pnpm tsc --noEmit -p tsconfig.json"
 sources = ["src/**/*.ts", "src/**/*.tsx"]
@@ -92,3 +85,6 @@ env.NODE_OPTIONS = "--no-experimental-global-navigator"
 run = "pnpm next build"
 sources = ["*.json", "*.js", "*.mjs", "*.ts", "public/**/*", "src/**/*"]
 outputs = { auto = true }
+
+["beeai-web:build:check"]
+depends = ["beeai-web:check:eslint", "beeai-web:check:tsc"]

@@ -86,6 +86,9 @@ run = "pnpm next build"
 sources = ["*.json", "*.js", "*.mjs", "*.ts", "public/**/*", "src/**/*"]
 outputs = { auto = true }
 
+["beeai-ui:build:check"]
+depends = ["beeai-ui:check:eslint", "beeai-ui:check:tsc"]
+
 # schema
 
 ["beeai-ui:schema:generate"]
