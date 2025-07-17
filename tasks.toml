@@ -68,7 +68,7 @@ version=$(
     yq -r .project.version      apps/beeai-server/pyproject.toml
     yq -r .version              apps/beeai-ui/package.json
     yq -r .version              apps/beeai-web/package.json
-    yq -r '.providers[].location | split(":v")[-1]' agent-registry.yaml
+    yq -r '.providers[].location | split(":")[-1]' agent-registry.yaml
   } | sort -u
 )
 if [[ $(wc -l <<<"$version") -ne 1 ]]; then echo "ERROR: Version mismatch detected: $(echo $version)" >&2; exit 1; fi
@@ -223,7 +223,7 @@ yq -i ".appVersion = \"$new_version\"" helm/Chart.yaml
 (cd apps/beeai-server && toml set 'project.version' "$new_version" --toml-path pyproject.toml && uv lock)
 yq -i ".version = \"$new_version\"" apps/beeai-ui/package.json
 yq -i ".version = \"$new_version\"" apps/beeai-web/package.json
-yq -i ".providers[].location |= sub(\":(.*)\$\"; \":v\" + \"$new_version\")" agent-registry.yaml
+yq -i ".providers[].location |= sub(\":(.*)\$\"; \":\" + \"$new_version\")" agent-registry.yaml
 
 # Confirm commit and push
 if gum confirm "Release version $new_version now?"; then
