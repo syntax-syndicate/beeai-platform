@@ -58,40 +58,22 @@ run = "addlicense -check -l apache -s=only -c '© BeeAI a Series of LF Projects,
 ["common:check:version"]
 dir = "{{config_root}}"
 run = '''
-#!/bin/bash
-set -e -o pipefail
-
-        helm_version=$(yq -r '.version'         helm/Chart.yaml)
-    helm_app_version=$(yq -r '.appVersion'      helm/Chart.yaml)
-   beeai_cli_version=$(yq -r '.project.version' apps/beeai-cli/pyproject.toml)
-beeai_server_version=$(yq -r '.project.version' apps/beeai-server/pyproject.toml)
-    beeai_ui_version=$(yq -r '.version'         apps/beeai-ui/package.json)
-   beeai_web_version=$(yq -r '.version'         apps/beeai-web/package.json)
-
-if [ "$helm_version" != "$helm_app_version" ] || \
-   [ "$helm_version" != "$beeai_cli_version" ] || \
-   [ "$helm_version" != "$beeai_server_version" ] || \
-   [ "$helm_version" != "$beeai_ui_version" ] || \
-   [ "$helm_version" != "$beeai_web_version" ]; then
-  echo "Version mismatch:"
-  echo "  helm.version:     $helm_version"
-  echo "  helm.appVersion:  $helm_app_version"
-  echo "  beeai-cli:        $beeai_cli_version"
-  echo "  beeai-server:     $beeai_server_version"
-  echo "  beeai-ui:         $beeai_ui_version"
-  echo "  beeai-web:        $beeai_web_version"
-  exit 1
-fi
-
-if ! [[ "$helm_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$ ]]; then
-  echo "ERROR: Invalid version format. Use #.#.# or #.#.#-rc#"
-  exit 1
-fi
-
-if [[ "$GITHUB_REF" == refs/tags/v* && "$GITHUB_REF" != "refs/tags/v$helm_version" ]]; then
-  echo "GITHUB_REF '$GITHUB_REF' does not match expected 'refs/tags/v$helm_version'"
-  exit 1
-fi
+#!/usr/bin/env bash
+set -euo pipefail
+version=$(
+  {
+    yq -r .version              helm/Chart.yaml
+    yq -r .appVersion           helm/Chart.yaml
+    yq -r .project.version      apps/beeai-cli/pyproject.toml
+    yq -r .project.version      apps/beeai-server/pyproject.toml
+    yq -r .version              apps/beeai-ui/package.json
+    yq -r .version              apps/beeai-web/package.json
+    yq -r '.providers[].location | split(":v")[-1]' agent-registry.yaml
+  } | sort -u
+)
+if [[ $(wc -l <<<"$version") -ne 1 ]]; then echo "ERROR: Version mismatch detected: $(echo $version)" >&2; exit 1; fi
+if ! [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$ ]]; then echo "ERROR: $version is not valid semver (X.Y.Z or X.Y.Z-rcN)" >&2; exit 1; fi
+if [[ -n "${GITHUB_REF:-}" ]] && [[ $GITHUB_REF != "refs/tags/v$version" ]]; then echo "ERROR: GITHUB_REF '$GITHUB_REF' does not match 'refs/tags/v$version'" >&2; exit 1; fi
 '''
 
 ### fix
@@ -236,6 +218,7 @@ yq -i ".appVersion = \"$new_version\"" helm/Chart.yaml
 (cd apps/beeai-server && toml set 'project.version' "$new_version" --toml-path pyproject.toml && uv lock)
 yq -i ".version = \"$new_version\"" apps/beeai-ui/package.json
 yq -i ".version = \"$new_version\"" apps/beeai-web/package.json
+yq -i ".providers[].location |= sub(\":(.*)\$\"; \":v\" + $new_version)" agent-registry.yaml
 
 # Confirm commit and push
 if gum confirm "Release version $new_version now?"; then
