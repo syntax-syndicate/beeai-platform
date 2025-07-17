@@ -1,6 +1,6 @@
 [project]
 name = "beeai-cli"
-version = "0.2.15"
+version = "0.2.16"
 description = "BeeAI CLI"
 readme = "README.md"
 authors = [{ name = "IBM Corp." }]
