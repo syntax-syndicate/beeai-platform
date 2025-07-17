@@ -19,7 +19,7 @@ from InquirerPy.validator import EmptyInputValidator
 from rich.table import Column
 
 from beeai_cli.api import api_request
-from beeai_cli.async_typer import AsyncTyper, console, create_table, err_console
+from beeai_cli.async_typer import AsyncTyper, console, create_table
 from beeai_cli.configuration import Configuration
 from beeai_cli.utils import format_error, parse_env_var, run_command, verbosity
 
@@ -387,7 +387,7 @@ async def setup(
                     )
             response_text = test_response.json().get("choices", [{}])[0].get("message", {}).get("content", "")
             if "Hello" not in response_text:
-                err_console.print(format_error("Error", "Model did not provide a proper response."))
+                console.print(format_error("Error", "Model did not provide a proper response."))
                 return False
 
             selected_embedding_model = None
@@ -442,7 +442,7 @@ async def setup(
                         return False
 
         except Exception as e:
-            err_console.print(format_error("Error", f"Error during model test: {e!s}"))
+            console.print(format_error("Error", f"Error during model test: {e!s}"))
             return False
 
         if not use_true_localhost:
@@ -489,10 +489,8 @@ async def ensure_llm_env():
     console.print("[bold]Welcome to 🐝 [red]BeeAI[/red]![/bold]")
     console.print("Let's start by configuring your LLM environment.\n")
     if not await setup():
-        err_console.print(
-            format_error("Error", "Could not continue because the LLM environment is not properly set up.")
-        )
-        err_console.print(
+        console.print(format_error("Error", "Could not continue because the LLM environment is not properly set up."))
+        console.print(
             "💡 [yellow]HINT[/yellow]: Try re-entering your LLM API details with: [green]beeai env setup[/green]"
         )
         sys.exit(1)
