@@ -207,6 +207,15 @@ def _stream_watsonx(stream: Generator) -> Generator[str, Any]:
                             )
                             for choice in chunk.get("choices", [])
                         ],
+                        usage=(
+                            openai.types.CompletionUsage(
+                                completion_tokens=chunk["usage"]["completion_tokens"],
+                                prompt_tokens=chunk["usage"]["prompt_tokens"],
+                                total_tokens=chunk["usage"]["total_tokens"],
+                            )
+                            if "usage" in chunk
+                            else None
+                        ),
                     ).model_dump(mode="json")
                     | {"beeai_proxy_version": BEEAI_PROXY_VERSION}
                 )
