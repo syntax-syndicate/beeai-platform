@@ -223,7 +223,7 @@ yq -i ".appVersion = \"$new_version\"" helm/Chart.yaml
 (cd apps/beeai-server && toml set 'project.version' "$new_version" --toml-path pyproject.toml && uv lock)
 yq -i ".version = \"$new_version\"" apps/beeai-ui/package.json
 yq -i ".version = \"$new_version\"" apps/beeai-web/package.json
-yq -i ".providers[].location |= sub(\":(.*)\$\"; \":v\" + $new_version)" agent-registry.yaml
+yq -i ".providers[].location |= sub(\":(.*)\$\"; \":v\" + \"$new_version\")" agent-registry.yaml
 
 # Confirm commit and push
 if gum confirm "Release version $new_version now?"; then
@@ -234,12 +234,9 @@ if gum confirm "Release version $new_version now?"; then
     git tag "v$new_version"
     git push --atomic origin main "v$new_version"
   )
-fi
-
-# Follow GitHub Action run
-if gum confirm "Follow GitHub Action? (Requires `gh` CLI.)"; then
-  gum spin --title="Waiting for GitHub Action to start..." sleep 10
-  run_id=$(gh run list --workflow=Release --branch=v$new_version --limit=1 --json databaseId,status -q '.[0].databaseId')
-  gh run watch $run_id
+  if gum confirm "Follow GitHub Action? (Requires gh CLI.)"; then
+    gum spin --title="Waiting for GitHub Action to start..." sleep 10
+    gh run watch $(gh run list --workflow=Release --branch=v$new_version --limit=1 --json databaseId,status -q '.[0].databaseId')
+  fi
 fi
 '''
