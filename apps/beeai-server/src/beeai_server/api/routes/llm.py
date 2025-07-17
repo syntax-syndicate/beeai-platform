@@ -187,7 +187,7 @@ def _stream_watsonx(stream: Generator) -> Generator[str, Any]:
                             openai.types.chat.chat_completion_chunk.Choice(
                                 index=choice["index"],
                                 delta=openai.types.chat.chat_completion_chunk.ChoiceDelta(
-                                    role=choice["delta"]["role"],
+                                    role=choice["delta"].get("role"),
                                     content=choice["delta"].get("content"),
                                     refusal=choice["delta"].get("refusal"),
                                     tool_calls=[
