@@ -120,7 +120,7 @@ async def setup(
                 ),
                 Choice(
                     name="IBM watsonx".ljust(25),
-                    value=("watsonx", None, "ibm/granite-3-3-8b-instruct", "granite-embedding-278m-multilingual"),
+                    value=("watsonx", None, "ibm/granite-3-3-8b-instruct", "ibm/granite-embedding-278m-multilingual"),
                 ),
                 Choice(name="Jan".ljust(25) + "💻 local", value=("Jan", "http://localhost:1337/v1", None, None)),
                 Choice(

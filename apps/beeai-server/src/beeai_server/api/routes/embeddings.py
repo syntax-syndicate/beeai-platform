@@ -1,79 +1,74 @@
 # Copyright 2025 © BeeAI a Series of LF Projects, LLC
 # SPDX-License-Identifier: Apache-2.0
 
-import re
+from typing import Literal
 
 import fastapi
-from beeai_framework.adapters.openai.backend.embedding import OpenAIEmbeddingModel
-from beeai_framework.adapters.watsonx.backend.embedding import WatsonxEmbeddingModel
-from beeai_framework.backend.types import EmbeddingModelOutput
-from pydantic import BaseModel
+import ibm_watsonx_ai
+import ibm_watsonx_ai.foundation_models.embeddings
+import openai
+import openai.types
+import pydantic
+from fastapi.concurrency import run_in_threadpool
 
 from beeai_server.api.dependencies import EnvServiceDependency
 
 router = fastapi.APIRouter()
 
+BEEAI_PROXY_VERSION = 1
 
-class EmbeddingsRequest(BaseModel):
+
+class EmbeddingsRequest(pydantic.BaseModel):
+    """
+    Corresponds to the arguments for OpenAI `client.embeddings.create(...)`.
+    """
+
     model: str
     input: list[str] | str
-
-
-class EmbeddingsDataItem(BaseModel):
-    object: str = "embedding"
-    index: int
-    embedding: list[float]
-
-
-class EmbeddingsResponse(BaseModel):
-    object: str = "list"
-    system_fingerprint: str = "beeai-embeddings-gateway"
-    model: str
-    usage: dict[str, int] = {
-        "prompt_tokens": int,
-        "total_tokens": int,
-        "completion_tokens": int,
-    }
-    data: list[EmbeddingsDataItem]
+    encoding_format: Literal["float"]
 
 
 @router.post("/embeddings")
-async def create_embeddings(
-    env_service: EnvServiceDependency,
-    request: EmbeddingsRequest,
-):
+async def create_embedding(env_service: EnvServiceDependency, request: EmbeddingsRequest):
     env = await env_service.list_env()
 
-    is_rits = re.match(r"^https://[a-z0-9.-]+\.rits\.fmaas\.res\.ibm.com/.*$", env["LLM_API_BASE"])
-    is_watsonx = re.match(r"^https://[a-z0-9.-]+\.ml\.cloud\.ibm\.com.*?$", env["LLM_API_BASE"])
-
-    embeddings = (
-        WatsonxEmbeddingModel(
-            model_id=env["EMBEDDING_MODEL"],
-            api_key=env["LLM_API_KEY"],
-            base_url=env["LLM_API_BASE"],
-            project_id=env.get("WATSONX_PROJECT_ID"),
-            space_id=env.get("WATSONX_SPACE_ID"),
+    if pydantic.HttpUrl(env["LLM_API_BASE"]).host.endswith(".ml.cloud.ibm.com"):
+        watsonx_response = await run_in_threadpool(
+            ibm_watsonx_ai.foundation_models.embeddings.Embeddings(
+                model_id=env["EMBEDDING_MODEL"],
+                credentials=ibm_watsonx_ai.Credentials(url=env["LLM_API_BASE"], api_key=env["LLM_API_KEY"]),
+                project_id=env.get("WATSONX_PROJECT_ID"),
+                space_id=env.get("WATSONX_SPACE_ID"),
+            ).generate,
+            inputs=[request.input] if isinstance(request.input, str) else request.input,
         )
-        if is_watsonx
-        else OpenAIEmbeddingModel(
-            env["EMBEDDING_MODEL"],
-            api_key=env["LLM_API_KEY"],
-            base_url=env["LLM_API_BASE"],
-            extra_headers={"RITS_API_KEY": env["LLM_API_KEY"]} if is_rits else {},
-        )
-    )
-
-    output: EmbeddingModelOutput = await embeddings.create(
-        values=(request.input if isinstance(request.input, list) else [request.input]),
-    )
-
-    return EmbeddingsResponse(
-        model=request.model,
-        data=[EmbeddingsDataItem(index=i, embedding=embedding) for i, embedding in enumerate(output.embeddings)],
-        usage={
-            "prompt_tokens": output.usage.prompt_tokens,
-            "completion_tokens": output.usage.completion_tokens,
-            "total_tokens": output.usage.total_tokens,
-        },
-    )
+        return openai.types.CreateEmbeddingResponse(
+            object="list",
+            model=watsonx_response["model_id"],
+            data=[
+                openai.types.Embedding(
+                    object="embedding",
+                    index=i,
+                    embedding=result["embedding"],
+                )
+                for i, result in enumerate(watsonx_response.get("results", []))
+            ],
+            usage=openai.types.create_embedding_response.Usage(
+                prompt_tokens=watsonx_response.get("usage", {}).get("prompt_tokens", 0),
+                total_tokens=watsonx_response.get("usage", {}).get("total_tokens", 0),
+            ),
+        ).model_dump(mode="json") | {"beeai_proxy_version": BEEAI_PROXY_VERSION}
+    else:
+        return (
+            await openai.AsyncOpenAI(
+                api_key=env["LLM_API_KEY"],
+                base_url=env["LLM_API_BASE"],
+                default_headers=(
+                    {"RITS_API_KEY": env["LLM_API_KEY"]}
+                    if pydantic.HttpUrl(env["LLM_API_BASE"]).host.endswith(".rits.fmaas.res.ibm.com")
+                    else {}
+                ),
+            ).embeddings.create(
+                **(request.model_dump(mode="json", exclude_none=True) | {"model": env["EMBEDDING_MODEL"]})
+            )
+        ).model_dump(mode="json") | {"beeai_proxy_version": BEEAI_PROXY_VERSION}
