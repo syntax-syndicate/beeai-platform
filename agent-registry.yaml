@@ -1,7 +1,7 @@
 providers:
   # Official
-  - location: ghcr.io/i-am-bee/beeai-platform/official/sequential-workflow:0.2.17
-  - location: ghcr.io/i-am-bee/beeai-platform/official/beeai-framework/chat:0.2.17
+  - location: ghcr.io/i-am-bee/beeai-platform/official/sequential-workflow:0.2.18
+  - location: ghcr.io/i-am-bee/beeai-platform/official/beeai-framework/chat:0.2.18
   # Community
-  - location: ghcr.io/i-am-bee/beeai-platform/community/aider:0.2.17
-  - location: ghcr.io/i-am-bee/beeai-platform/community/gpt-researcher:0.2.17
+  - location: ghcr.io/i-am-bee/beeai-platform/community/aider:0.2.18
+  - location: ghcr.io/i-am-bee/beeai-platform/community/gpt-researcher:0.2.18
