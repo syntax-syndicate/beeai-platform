@@ -78,7 +78,7 @@ deactivate
 
 It's desirable to run and debug (i.e. in an IDE) individual components against the full stack (PostgreSQL,
 OpenTelemetry, Arize Phoenix, ...). For this, we include [Telepresence](https://telepresence.io/) which allows rewiring
-a Kubernetes container to your local machine.
+a Kubernetes container to your local machine. (Note that `sshfs` is not needed, since we don't use it in this setup.)
 
 ```sh
 mise run beeai-server:dev:start
@@ -154,7 +154,7 @@ eval "$(mise run beeai-server:dev:shell)"
 # Start platform
 mise beeai-cli:run -- platform start --vm-name=beeai-local-dev # optional --tag [tag] --import-images
 mise x -- telepresence helm install
-mise x -- telepresence connect --namespace beeai
+mise x -- telepresence connect
 
 # Receive traffic to a pod by replacing it in the cluster
 mise x -- telepresence replace <pod-name>
