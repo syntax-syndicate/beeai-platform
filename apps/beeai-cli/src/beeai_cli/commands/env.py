@@ -86,7 +86,7 @@ LLM_PROVIDERS = [
     ),
     Choice(
         name="Google Gemini".ljust(25) + "🆓 has a free tier",
-        value=("Google", "https://generativelanguage.googleapis.com/v1beta/openai", None),
+        value=("Gemini", "https://generativelanguage.googleapis.com/v1beta/openai", None),
     ),
     Choice(
         name="Groq".ljust(25) + "🆓 has a free tier",
@@ -132,7 +132,7 @@ EMBEDDING_PROVIDERS = [
     ),
     Choice(
         name="Google Gemini".ljust(25) + "🆓 has a free tier",
-        value=("Google", "https://generativelanguage.googleapis.com/v1beta/openai", "models/gemini-embedding-001"),
+        value=("Gemini", "https://generativelanguage.googleapis.com/v1beta/openai", "models/gemini-embedding-001"),
     ),
     Choice(
         name="IBM watsonx".ljust(25),
